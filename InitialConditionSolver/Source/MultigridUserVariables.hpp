@@ -9,7 +9,7 @@
 // assign an enum to each variable
 enum
 {
-    c_psi,
+    c_psi_0,
 
     c_A11_0,
     c_A12_0,
@@ -26,11 +26,31 @@ enum
 namespace MultigridUserVariables
 {
 static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
-    "psi",
+    "psi_0",
 
     "A11_0", "A12_0", "A13_0", "A22_0", "A23_0", "A33_0",
 
     "phi_0"};
+}
+
+// assign an enum to each constraint
+enum
+{
+    c_psi,
+
+    c_V1,
+    c_V2,
+    c_V3,
+
+    NUM_CONSTRAINTS
+};
+
+namespace ConstraintTerms
+{
+static constexpr char const *variable_names[NUM_CONSTRAINTS] = {
+    "psi",
+
+    "V1", "V2", "V3"};
 }
 
 #endif /* MULTIGRIDUSERVARIABLES_HPP */

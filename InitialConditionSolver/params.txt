@@ -1,5 +1,6 @@
 # Params for variable coefficient multigrid solver, solving the eqn
 # alpha*aCoef(x)*I - beta*bCoef(x) * laplacian = rhs
+# (using eqn 3.2.18 Alcubierre)
 
 # The default setup allows for 2 BHs (Bowen York data) in the presence
 # of a scalar field configuration, with either periodic BCs (constant K

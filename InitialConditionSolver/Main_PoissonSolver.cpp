@@ -81,14 +81,14 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     {
         multigrid_vars[ilev] =
             new LevelData<FArrayBox>(a_grids[ilev], NUM_MULTIGRID_VARS, ghosts);
-        dpsi[ilev] = new LevelData<FArrayBox>(a_grids[ilev], 1, ghosts);
-        rhs[ilev] = new LevelData<FArrayBox>(a_grids[ilev], 1, IntVect::Zero);
+        dpsi[ilev] = new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINTS, ghosts);
+        rhs[ilev] = new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINTS, IntVect::Zero);
         integrand[ilev] =
             new LevelData<FArrayBox>(a_grids[ilev], 1, IntVect::Zero);
         aCoef[ilev] = RefCountedPtr<LevelData<FArrayBox>>(
-            new LevelData<FArrayBox>(a_grids[ilev], 1, IntVect::Zero));
+            new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINTS, IntVect::Zero));
         bCoef[ilev] = RefCountedPtr<LevelData<FArrayBox>>(
-            new LevelData<FArrayBox>(a_grids[ilev], 1, IntVect::Zero));
+            new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINTS, IntVect::Zero));
         vectDomains[ilev] = domLev;
         vectDx[ilev] = dxLev;
         // set initial guess for psi and zero dpsi
@@ -130,6 +130,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     pp.query("max_NL_iterations", max_NL_iter);
 
     // Iterate linearised Poisson eqn for NL solution
+    // (Solving eqn 3.2.18 Alcubierre)
     Real dpsi_norm = 0.0;
     Real constant_K = 0.0;
     for (int NL_iter = 0; NL_iter < max_NL_iter; NL_iter++)
@@ -220,10 +221,10 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         // check if converged or diverging and if so exit NL iteration for loop
         dpsi_norm = computeNorm(dpsi, a_params.refRatio, a_params.coarsestDx,
-                                Interval(0, 0));
+                                Interval(0, NUM_CONSTRAINTS));
         pout() << "The norm of dpsi after step " << NL_iter + 1 << " is "
                << dpsi_norm << endl;
-        if (dpsi_norm < tolerance || dpsi_norm > 1e5)
+        if (dpsi_norm < tolerance || dpsi_norm > 1e9)
         {
             break;
         }
@@ -291,26 +292,26 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
-        char *inFile = argv[1];
-        ParmParse pp(argc - 2, argv + 2, NULL, inFile);
+		char *inFile = argv[1];
+		ParmParse pp(argc - 2, argv + 2, NULL, inFile);
 
-        PoissonParameters params;
-        Vector<DisjointBoxLayout> grids;
+		PoissonParameters params;
+		Vector<DisjointBoxLayout> grids;
 
-        // read params from file
-        getPoissonParameters(params);
+		// read params from file
+		getPoissonParameters(params);
 
-        // set up the grids, using the rhs for tagging to decide
-        // where needs additional levels
-        set_grids(grids, params);
+		// set up the grids, using the rhs for tagging to decide
+		// where needs additional levels
+		set_grids(grids, params);
 
-        // Solve the equations!
-        status = poissonSolve(grids, params);
+		// Solve the equations!
+		status = poissonSolve(grids, params);
 
-    } // End scoping trick
+	    } // End scoping trick
 
-#ifdef CH_MPI
-    MPI_Finalize();
-#endif
-    return status;
+	#ifdef CH_MPI
+	    MPI_Finalize();
+	#endif
+	    return status;
 }

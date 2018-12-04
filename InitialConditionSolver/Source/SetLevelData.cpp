@@ -34,6 +34,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
+    CH_assert(a_dpsi.nComp() == NUM_CONSTRAINTS);
 
     DataIterator dit = a_multigrid_vars.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
@@ -53,8 +54,14 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             // for the BHs - this is added at the output data stage
             // and when we calculate psi_0 in the rhs etc
             // as it already satisfies Laplacian(psi) = 0
-            multigrid_vars_box(iv, c_psi) = 1.0;
-            dpsi_box(iv, 0) = 0.0;
+            multigrid_vars_box(iv, c_psi_0) = 1.0;
+            dpsi_box(iv, c_psi) = 0.0;
+
+            // KC TODO: These are not really dpsi but dV_i so we
+            // should rename dpsi as dsolution for example
+            dpsi_box(iv, c_V1) = 0.0;
+            dpsi_box(iv, c_V2) = 0.0;
+            dpsi_box(iv, c_V3) = 0.0;
 
             // set the phi value - need the distance from centre
             RealVect loc(iv + 0.5 * RealVect::Unit);
@@ -79,19 +86,20 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
+    CH_assert(a_rhs.nComp() == NUM_CONSTRAINTS);
 
     DataIterator dit = a_rhs.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
     {
         FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
         FArrayBox &rhs_box = a_rhs[dit()];
-        rhs_box.setVal(0.0, 0);
+        rhs_box.setVal(0.0);
         Box this_box = rhs_box.box(); // no ghost cells
 
         // calculate the laplacian of psi across the box
         FArrayBox laplacian_of_psi(this_box, 1);
         FORT_GETLAPLACIANPSIF(CHF_FRA1(laplacian_of_psi, 0),
-                              CHF_CONST_FRA1(multigrid_vars_box, c_psi),
+                              CHF_CONST_FRA1(multigrid_vars_box, c_psi_0),
                               CHF_CONST_REAL(a_dx[0]), CHF_BOX(this_box));
 
         // calculate the rho contribution from gradients of phi
@@ -123,12 +131,18 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                  2 * pow(multigrid_vars_box(iv, c_A23_0), 2.0);
 
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real psi_0 = multigrid_vars_box(iv, c_psi) + psi_bh;
+            Real psi_0 = multigrid_vars_box(iv, c_psi_0) + psi_bh;
 
-            rhs_box(iv, 0) =
+            rhs_box(iv, c_psi) =
                 0.125 * m * pow(psi_0, 5.0) - 0.125 * A2 * pow(psi_0, -7.0) -
                 2.0 * M_PI * a_params.G_Newton * rho_gradient(iv, 0) * psi_0 -
                 laplacian_of_psi(iv, 0);
+
+            // KC TODO: Populate these with the rhs for dV_i
+            rhs_box(iv, c_V1) = 0.0;
+            rhs_box(iv, c_V2) = 0.0;
+            rhs_box(iv, c_V3) = 0.0;
+
         }
     }
 } // end set_rhs
@@ -142,6 +156,7 @@ void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
+    CH_assert(a_integrand.nComp() == 1);
 
     DataIterator dit = a_integrand.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
@@ -154,7 +169,7 @@ void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
         // calculate the laplacian of psi across the box
         FArrayBox laplacian_of_psi(this_box, 1);
         FORT_GETLAPLACIANPSIF(CHF_FRA1(laplacian_of_psi, 0),
-                              CHF_CONST_FRA1(multigrid_vars_box, c_psi),
+                              CHF_CONST_FRA1(multigrid_vars_box, c_psi_0),
                               CHF_CONST_REAL(a_dx[0]), CHF_BOX(this_box));
 
         // calculate the rho contribution from gradients of phi
@@ -186,7 +201,7 @@ void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
                  2 * pow(multigrid_vars_box(iv, c_A23_0), 2.0);
 
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real psi_0 = multigrid_vars_box(iv, c_psi) + psi_bh;
+            Real psi_0 = multigrid_vars_box(iv, c_psi_0) + psi_bh;
 
             integrand_box(iv, 0) =
                 -1.5 * m + 1.5 * A2 * pow(psi_0, -12.0) +
@@ -205,6 +220,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
+    CH_assert(a_condition.nComp() == 1);
 
     DataIterator dit = a_condition.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
@@ -244,7 +260,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             // the condition is similar to the rhs but we take abs
             // value of the contributions and add in BH criteria
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real psi_0 = multigrid_vars_box(iv, c_psi) + psi_bh;
+            Real psi_0 = multigrid_vars_box(iv, c_psi_0) + psi_bh;
             condition_box(iv, 0) = 1.5 * abs(m) + 1.5 * A2 * pow(psi_0, -7.0) +
                                    24.0 * M_PI * a_params.G_Newton *
                                        abs(rho_gradient(iv, 0)) *
@@ -275,7 +291,11 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
         for (bit.begin(); bit.ok(); ++bit)
         {
             IntVect iv = bit();
-            multigrid_vars_box(iv, c_psi) += dpsi_box(iv, 0);
+            multigrid_vars_box(iv, c_psi_0) += dpsi_box(iv, c_psi);
+
+            //KC TODO: Will need to update the Vi values (Aij) based on dVi
+            //e.g.
+            //multigrid_vars_box(iv, c_Vx) += dpsi_box(iv, c_V1); etc
         }
     }
 }
@@ -304,6 +324,7 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
+    CH_assert(a_aCoef.nComp() == NUM_CONSTRAINTS);
 
     DataIterator dit = a_aCoef.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
@@ -340,10 +361,15 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                  2 * pow(multigrid_vars_box(iv, c_A23_0), 2.0);
 
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real psi_0 = multigrid_vars_box(iv, c_psi) + psi_bh;
-            aCoef_box(iv, 0) =
+            Real psi_0 = multigrid_vars_box(iv, c_psi_0) + psi_bh;
+            aCoef_box(iv, c_psi) =
                 -0.625 * m * pow(psi_0, 4.0) - A2 * pow(psi_0, -8.0) +
                 2.0 * M_PI * a_params.G_Newton * rho_gradient(iv, 0);
+
+            // KC TODO : Update these for linearized version of Mom constraints
+            aCoef_box(iv, c_V1) = 0.0;
+            aCoef_box(iv, c_V2) = 0.0;
+            aCoef_box(iv, c_V3) = 0.0;
         }
     }
 }
@@ -355,13 +381,15 @@ void set_b_coef(LevelData<FArrayBox> &a_bCoef,
                 const PoissonParameters &a_params, const RealVect &a_dx)
 {
 
-    CH_assert(a_bCoef.nComp() == 1);
-    int comp_number = 0;
+    CH_assert(a_bCoef.nComp() == NUM_CONSTRAINTS);
 
     for (DataIterator dit = a_bCoef.dataIterator(); dit.ok(); ++dit)
     {
         FArrayBox &bCoef_box = a_bCoef[dit()];
-        bCoef_box.setVal(1.0, comp_number);
+        for (int iconstraint = 0; iconstraint < NUM_CONSTRAINTS ; iconstraint++)
+        {
+            bCoef_box.setVal(1.0, iconstraint);
+        }
     }
 }
 
@@ -409,7 +437,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
             // GRChombo conformal factor chi = psi^-4
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real chi = pow(multigrid_vars_box(iv, c_psi) + psi_bh, -4.0);
+            Real chi = pow(multigrid_vars_box(iv, c_psi_0) + psi_bh, -4.0);
             grchombo_vars_box(iv, c_chi) = chi;
             Real factor = pow(chi, 1.5);
 
