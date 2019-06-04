@@ -24,6 +24,9 @@
 #include "computeSum.H"
 #include <iostream>
 
+// Boson Star specific includes
+#include "BosonStar.ICS.hpp"
+
 #ifdef CH_Linux
 // Should be undefined by default
 //#define TRAP_FPE
