@@ -19,6 +19,10 @@ using std::cerr;
 #include "VariableCoeffPoissonOperator.H"
 #include "VariableCoeffPoissonOperatorFactory.H"
 
+// Boson Star includes
+#include "BosonStar.ICS.hpp"
+#include "ComplexPotential.hpp"
+
 // various functions operating on grids to set up data for initial
 // conditions, spatially dependent coefficients and rhs etc
 

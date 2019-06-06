@@ -40,7 +40,7 @@ static void enableFpExceptions();
 using std::cerr;
 
 void compute_boson_star_profiles(BosonStar &a_boson_star1,
-                                 BosonStar &a_boson_star2
+                                 BosonStar &a_boson_star2,
                                  const PoissonParameters &a_params)
 {
     if(a_params.verbosity)

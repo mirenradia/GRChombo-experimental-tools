@@ -12,17 +12,11 @@
 #include "CONSTANTS.H"
 #include "CoarseAverage.H"
 #include "LoadBalance.H"
-#include "MyPhiFunction.H"
 #include "PoissonParameters.H"
-#include "SetLevelDataF_F.H"
 #include "VariableCoeffPoissonOperatorFactory.H"
 #include "computeNorm.H"
 #include "parstream.H"
 #include <cmath>
-
-// Boson Star includes
-#include "BosonStar.ICS.hpp"
-#include "ComplexPotential.hpp"
 
 // Set various LevelData functions across the grid
 
@@ -61,9 +55,9 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             for(int idir = 0; idir < SpaceDim; ++idir)
             {
                 loc1[idir] = loc[idir]
-                    - a_boson_star1.params_BosonStar.star_centre[idir];
+                    - a_params.boson_star1_params.star_centre[idir];
                 loc2[idir] = loc[idir]
-                    - a_boson_star2.params_BosonStar.star_centre[idir];
+                    - a_params.boson_star2_params.star_centre[idir];
             }
             Real r1, r2;
             r1 = loc1.vectorLength();
@@ -83,12 +77,12 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             multigrid_vars_box(iv, c_lapse_0) = lapse;
 
             // Matter superposition
-            Real phase1 = a_boson_star1.m_params_BosonStar.phase;
-            Real phase2 = a_boson_star2.m_params_BosonStar.phase;
+            Real phase1 = a_params.boson_star1_params.phase;
+            Real phase2 = a_params.boson_star2_params.phase;
             Real frequency1 = a_boson_star1.m_1d_sol.m_frequency_over_mass
-                                * a_boson_star1.m_params_potential.scalar_mass;
+                                * a_params.potential_params.scalar_mass;
             Real frequency2 = a_boson_star2.m_1d_sol.m_frequency_over_mass
-                                * a_boson_star2.m_params_potential.scalar_mass;
+                                * a_params.potential_params.scalar_mass;
             Real mod_phi1 = a_boson_star1.m_1d_sol.m_phi(r1);
             Real mod_phi2 = a_boson_star2.m_1d_sol.m_phi(r2);
             multigrid_vars_box(iv, c_phi_Re_0) = mod_phi1 * cos(phase1)
@@ -116,6 +110,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
+    Potential potential(a_params.potential_params);
     DataIterator dit = a_rhs.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
     {
@@ -133,9 +128,9 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             Real laplacian_of_psi_0, grad_phi_sq, V_of_mod_phi_sq;
             set_laplacian_psi(laplacian_of_psi_0, iv, multigrid_vars_box, a_dx);
             set_grad_phi_sq(grad_phi_sq, iv, multigrid_vars_box, a_dx);
-            compute_potential(V_of_mod_phi_sq,
-                              multigrid_vars_box(iv, c_phi_Re_0),
-                              multigrid_vars_box(iv, c_phi_Im_0));
+            potential.compute_potential(V_of_mod_phi_sq,
+                                        multigrid_vars_box(iv, c_phi_Re_0),
+                                        multigrid_vars_box(iv, c_phi_Im_0));
 
             Real Pi_Re = multigrid_vars_box(iv, c_Pi_Re_0);
             Real Pi_Im = multigrid_vars_box(iv, c_Pi_Im_0);
@@ -155,7 +150,7 @@ inline void set_laplacian_psi(Real &laplacian_of_psi_0,
                               const FArrayBox &a_multigrid_vars_box,
                               const RealVect &a_dx)
 {
-    laplacian_of_psi = 0.0;
+    laplacian_of_psi_0 = 0.0;
     for(int idir = 0; idir < SpaceDim; ++idir)
     {
         IntVect iv_offset1 = a_iv;
@@ -168,7 +163,7 @@ inline void set_laplacian_psi(Real &laplacian_of_psi_0,
                           (+1.0 * a_multigrid_vars_box(iv_offset2, c_psi_0)
                            -2.0 * a_multigrid_vars_box(a_iv, c_psi_0)
                            +1.0 * a_multigrid_vars_box(iv_offset1, c_psi_0));
-        laplacian_of_psi += d2psi_dxdx;
+        laplacian_of_psi_0 += d2psi_dxdx;
     }
 } // end set_laplacian_psi
 
@@ -192,10 +187,10 @@ inline void set_grad_phi_sq(Real &grad_phi_sq,
         // 2nd order stencils for now
         Real dphi_Re_dx = 0.5 * dx_inv *
                           (a_multigrid_vars_box(iv_offset2, c_phi_Re_0) -
-                           a_multigrid_vars_box(iv_offset1, c_phi_Re_0))
+                           a_multigrid_vars_box(iv_offset1, c_phi_Re_0));
         Real dphi_Im_dx = 0.5 * dx_inv *
                           (a_multigrid_vars_box(iv_offset2, c_phi_Im_0) -
-                           a_multigrid_vars_box(iv_offset1, c_phi_Im_0))
+                           a_multigrid_vars_box(iv_offset1, c_phi_Im_0));
         grad_phi_sq += dphi_Re_dx * dphi_Re_dx + dphi_Im_dx * dphi_Im_dx;
     }
 } //end set_grad_phi_sq
@@ -209,6 +204,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
+    Potential potential(a_params.potential_params);
     DataIterator dit = a_condition.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
     {
@@ -222,11 +218,11 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
         {
             IntVect iv = bit();
 
-            Real grad_phi_sq, mod_Pi_sq, V_of_mod_phi_sq;
+            Real grad_phi_sq, V_of_mod_phi_sq;
             set_grad_phi_sq(grad_phi_sq, iv, multigrid_vars_box, a_dx);
-            compute_potential(V_of_mod_phi_sq,
-                              multigrid_vars_box(iv, c_phi_Re_0),
-                              multigrid_vars_box(iv, c_phi_Im_0));
+            potential.compute_potential(V_of_mod_phi_sq,
+                                        multigrid_vars_box(iv, c_phi_Re_0),
+                                        multigrid_vars_box(iv, c_phi_Im_0));
 
             Real Pi_Re = multigrid_vars_box(iv, c_Pi_Re_0);
             Real Pi_Im = multigrid_vars_box(iv, c_Pi_Im_0);
@@ -272,9 +268,9 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 LevelData<FArrayBox> &a_multigrid_vars,
                 const PoissonParameters &a_params, const RealVect &a_dx)
 {
-
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
+    Potential potential(a_params.potential_params);
     DataIterator dit = a_aCoef.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
     {
@@ -286,11 +282,11 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
         {
             IntVect iv = bit();
 
-            Real grad_phi_sq, mod_Pi_sq, V_of_mod_phi_sq;
+            Real grad_phi_sq, V_of_mod_phi_sq;
             set_grad_phi_sq(grad_phi_sq, iv, multigrid_vars_box, a_dx);
-            compute_potential(V_of_mod_phi_sq,
-                              multigrid_vars_box(iv, c_phi_Re_0),
-                              multigrid_vars_box(iv, c_phi_Im_0));
+            potential.compute_potential(V_of_mod_phi_sq,
+                                        multigrid_vars_box(iv, c_phi_Re_0),
+                                        multigrid_vars_box(iv, c_phi_Im_0));
 
 
             Real Pi_Re = multigrid_vars_box(iv, c_Pi_Re_0);

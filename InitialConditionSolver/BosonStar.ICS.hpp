@@ -9,6 +9,7 @@
 #include "ComplexPotential.hpp"
 #include "BosonStarParams.hpp"
 #include "BosonStarIsotropicSolution.hpp"
+#include "PoissonParameters.H"
 #include <vector>
 #include "parstream.H" //gives pout
 
@@ -26,7 +27,12 @@ public:
     //! The constructor
     BosonStar(BosonStar_params_t a_params_BosonStar,
         Potential::params_t a_params_potential, double a_G_Newton,
-        int a_verbosity);
+        int a_verbosity)
+    : m_1d_sol(a_params_BosonStar, a_params_potential, a_G_Newton, a_verbosity),
+    m_G_Newton(a_G_Newton), m_params_BosonStar(a_params_BosonStar),
+    m_params_potential(a_params_potential), m_verbosity(a_verbosity)
+    {
+    }
 
     //! Computes the 1d solution and stores in m_1d_sol
     void compute_1d_solution(const double a_max_radius);
@@ -34,13 +40,15 @@ public:
     BosonStarIsotropicSolution<initial_data_t, initial_state_t> m_1d_sol; /*<
     The object that stores the solution found by the 1d ODE integrator */
 
+    friend void compute_boson_star_profiles(BosonStar &a_boson_star1,
+                                            BosonStar &a_boson_star2,
+                                            const PoissonParameters &a_params);
+
 protected:
     double m_G_Newton;
     BosonStar_params_t m_params_BosonStar; //!< The complex scalar field params
     Potential::params_t m_params_potential; //!< The potential params
     int m_verbosity;
 };
-
-#include "BosonStar.ICS.impl.hpp"
 
 #endif /* BOSONSTAR_ICS_HPP_ */

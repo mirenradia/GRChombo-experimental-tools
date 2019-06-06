@@ -129,7 +129,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     //pp.get("beta", a_params.beta);
     // hardcode these to the expected values
     a_params.alpha = 1.0;
-    a_params.beta = -1.0
+    a_params.beta = -1.0;
     // print out the overall coeffs just to be sure we have selected them
     // correctly
     pout() << "alpha, beta = " << a_params.alpha << ", " << a_params.beta
@@ -169,53 +169,56 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     // Boson Star 1 parameters
     pp.load("central_amplitude_CSF1",
-            boson_star1_params.central_amplitude_CSF);
-    pp.load("phase1", boson_star1_params.phase, 0.0);
-    pp.load("star_centre1", boson_star1_params.star_centre);
+            a_params.boson_star1_params.central_amplitude_CSF);
+    pp.load("phase1", a_params.boson_star1_params.phase, 0.0);
+    pp.load("star_centre1", a_params.boson_star1_params.star_centre);
 
     pout() << "\nBoson Star 1 parameters:\n"
            << "central_amplitude = "
                 << a_params.boson_star1_params.central_amplitude_CSF << "\n"
            << "phase = " << a_params.boson_star1_params.phase << "\n"
-           << "centre = (" << a_params.boson_star1_params.centre[0] << ", "
-                           << a_params.boson_star1_params.centre[1] << ", "
-                           << a_params.boson_star2_params.centre[2] << ")"
+           << "centre = (" << a_params.boson_star1_params.star_centre[0] << ", "
+                           << a_params.boson_star1_params.star_centre[1] << ", "
+                           << a_params.boson_star1_params.star_centre[2] << ")"
            << endl;
 
 
     // Initialize values for boson_star2_params to same as boson_star1_params
     // and then assign that ones that should differ below
-    boson_star2_params = boson_star1_params;
+    a_params.boson_star2_params = a_params.boson_star1_params;
 
     // Are the two stars' profiles identical
-    pp.load("identical", identical, false);
+    pp.load("identical", a_params.identical, false);
 
     // Boson Star 2 parameters
-    if (!identical)
+    if (!a_params.identical)
     {
         pp.load("central_amplitude_CSF2",
-                boson_star2_params.central_amplitude_CSF);
+                a_params.boson_star2_params.central_amplitude_CSF);
     }
-    pp.load("phase2", boson_star2_params.phase, 0.0);
-    pp.load("star_centre2", boson_star2_params.star_centre,
-            {L - boson_star1_params.star_centre[0],
-             L - boson_star1_params.star_centre[1],
-             L - boson_star1_params.star_centre[2]});
+    pp.load("phase2", a_params.boson_star2_params.phase, 0.0);
+    pp.load("star_centre2", a_params.boson_star2_params.star_centre,
+            {a_params.domainLength[0]
+                - a_params.boson_star1_params.star_centre[0],
+             a_params.domainLength[1]
+                - a_params.boson_star1_params.star_centre[1],
+             a_params.domainLength[2]
+                - a_params.boson_star1_params.star_centre[2]});
 
     pout() << "\nBoson Star 2 parameters:\n"
            << "central_amplitude = "
                 << a_params.boson_star2_params.central_amplitude_CSF << "\n"
            << "phase = " << a_params.boson_star2_params.phase << "\n"
-           << "centre = (" << a_params.boson_star2_params.centre[0] << ", "
-                           << a_params.boson_star2_params.centre[1] << ", "
-                           << a_params.boson_star2_params.centre[2] << ")"
+           << "centre = (" << a_params.boson_star2_params.star_centre[0] << ", "
+                           << a_params.boson_star2_params.star_centre[1] << ", "
+                           << a_params.boson_star2_params.star_centre[2] << ")"
            << endl;
 
     // Potential params
-    pp.load("scalar_mass", potential_params.scalar_mass, 1.0);
-    pp.load("phi4_coeff", potential_params.phi4_coeff, 0.0);
+    pp.load("scalar_mass", a_params.potential_params.scalar_mass, 1.0);
+    pp.load("phi4_coeff", a_params.potential_params.phi4_coeff, 0.0);
 
     pout() << "\nPotential parameters:\n"
-           << "scalar_mass = " << potential_params.scalar_mass << "\n"
-           << "phi^4_coeff = " << potential_params.phi4_coeff << endl;
+           << "scalar_mass = " << a_params.potential_params.scalar_mass << "\n"
+           << "phi^4_coeff = " << a_params.potential_params.phi4_coeff << endl;
 }
