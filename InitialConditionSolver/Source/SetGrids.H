@@ -24,10 +24,15 @@ using std::cerr;
 #include "VariableCoeffPoissonOperator.H"
 #include "VariableCoeffPoissonOperatorFactory.H"
 
+// Boson Star specific includes
+#include "BosonStar.ICS.hpp"
+
 // KC TODO - make this a namespace?
 // various functions operating to set up grids
 extern int set_grids(Vector<DisjointBoxLayout> &vectGrids,
-                     PoissonParameters &a_params);
+                     PoissonParameters &a_params,
+                     BosonStar &a_boson_star1,
+                     BosonStar &a_boson_star2);
 
 extern void set_domains_and_dx(Vector<ProblemDomain> &vectDomain,
                                Vector<Real> &vectDx,

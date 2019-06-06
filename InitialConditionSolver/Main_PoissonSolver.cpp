@@ -39,6 +39,44 @@ static void enableFpExceptions();
 
 using std::cerr;
 
+void compute_boson_star_profiles(BosonStar &a_boson_star1,
+                                 BosonStar &a_boson_star2
+                                 const PoissonParameters &a_params)
+{
+    if(a_params.verbosity)
+    {
+        pout() << "compute_boson_star_profiles: Computing boson star 1 profile"
+               << std::endl;
+    }
+    a_boson_star1.compute_1d_solution(3.5 * a_params.domainLength[0]);
+
+    // only need to compute profile for 2nd star if different from first
+    if(!a_params.identical)
+    {
+        if(a_params.verbosity)
+        {
+            pout() << "compute_boson_star_profiles:"
+                      " Computing boson star 2 profile" << std::endl;
+        }
+        a_boson_star2.compute_1d_solution(3.5 * a_params.domainLength[0]);
+    }
+    else
+    {
+        if(a_params.verbosity)
+        {
+            pout() << "compute_boson_star_profiles: Boson star 2 identical"
+                      " to star 1; skipping profile computation" << std::endl;
+        }
+
+        // Copy boson_star1 into boson_star2 keeping phase and centre
+        auto boson_star2_centre = a_boson_star2.m_params_BosonStar.star_centre;
+        double boson_star2_phase = a_boson_star2.m_params_BosonStar.phase;
+        a_boson_star2 = a_boson_star1;
+        a_boson_star2.m_params_BosonStar.star_centre = boson_star2_centre;
+        a_boson_star2.m_params_BosonStar.phase = boson_star2_phase;
+    }
+}
+
 // Sets up and runs the solver
 // The equation solved is: [aCoef*I + bCoef*Laplacian](dpsi) = rhs
 // We assume conformal flatness, K=const and Momentum constraint satisfied
@@ -46,7 +84,9 @@ using std::cerr;
 // lapse = 1 shift = 0, phi is the scalar field and is used to
 // calculate the rhs, Pi = dphidt = 0.
 int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
-                 const PoissonParameters &a_params)
+                 const PoissonParameters &a_params,
+                 BosonStar &a_boson_star1,
+                 BosonStar &a_boson_star2)
 {
 
     // the params reader
@@ -60,8 +100,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     Vector<LevelData<FArrayBox> *> dpsi(nlevels, NULL);
     // the solver vars - coefficients and source
     Vector<LevelData<FArrayBox> *> rhs(nlevels, NULL);
-    // the integrand for constant K integrability condition
-    Vector<LevelData<FArrayBox> *> integrand(nlevels, NULL);
     // the coeff for the I term
     Vector<RefCountedPtr<LevelData<FArrayBox>>> aCoef(nlevels);
     // the coeff for the Laplacian
@@ -86,8 +124,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             new LevelData<FArrayBox>(a_grids[ilev], NUM_MULTIGRID_VARS, ghosts);
         dpsi[ilev] = new LevelData<FArrayBox>(a_grids[ilev], 1, ghosts);
         rhs[ilev] = new LevelData<FArrayBox>(a_grids[ilev], 1, IntVect::Zero);
-        integrand[ilev] =
-            new LevelData<FArrayBox>(a_grids[ilev], 1, IntVect::Zero);
         aCoef[ilev] = RefCountedPtr<LevelData<FArrayBox>>(
             new LevelData<FArrayBox>(a_grids[ilev], 1, IntVect::Zero));
         bCoef[ilev] = RefCountedPtr<LevelData<FArrayBox>>(
@@ -97,7 +133,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // set initial guess for psi and zero dpsi
         // and values for other multigrid sources - phi and Aij
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
-                               a_params);
+                               a_params, a_boson_star1, a_boson_star2);
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -134,41 +170,20 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // Iterate linearised Poisson eqn for NL solution
     Real dpsi_norm = 0.0;
-    Real constant_K = 0.0;
     for (int NL_iter = 0; NL_iter < max_NL_iter; NL_iter++)
     {
 
         pout() << "Main Loop Iteration " << (NL_iter + 1) << " out of "
                << max_NL_iter << endl;
 
-        // Set integrability condition on K if periodic
-        if (a_params.periodic[0] == 1)
-        {
-            // Calculate values for integrand here with K unset
-            pout() << "Computing average K value... " << endl;
-            for (int ilev = 0; ilev < nlevels; ilev++)
-            {
-                set_constant_K_integrand(*integrand[ilev],
-                                         *multigrid_vars[ilev], vectDx[ilev],
-                                         a_params);
-            }
-            Real integral = computeSum(integrand, a_params.refRatio,
-                                       a_params.coarsestDx, Interval(0, 0));
-            Real volume = a_params.domainLength[0] * a_params.domainLength[1] *
-                          a_params.domainLength[2];
-            constant_K = -sqrt(abs(integral) / volume);
-            pout() << "Constant average K value set to " << constant_K << endl;
-        }
-
         // Calculate values for coefficients here - see SetLevelData.cpp
         // for details
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_a_coef(*aCoef[ilev], *multigrid_vars[ilev], a_params,
-                       vectDx[ilev], constant_K);
+                       vectDx[ilev]);
             set_b_coef(*bCoef[ilev], a_params, vectDx[ilev]);
-            set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params,
-                    constant_K);
+            set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params);
         }
 
         // set up solver factory
@@ -245,8 +260,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
-    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params,
-                      constant_K);
+    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params);
 
     // clean up data
     for (int level = 0; level < multigrid_vars.size(); level++)
@@ -260,11 +274,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         {
             delete rhs[level];
             rhs[level] = NULL;
-        }
-        if (integrand[level] != NULL)
-        {
-            delete integrand[level];
-            integrand[level] = NULL;
         }
         if (dpsi[level] != NULL)
         {
@@ -303,12 +312,21 @@ int main(int argc, char *argv[])
         // read params from file
         getPoissonParameters(params);
 
+        // calculate boson star 1d profiles
+        BosonStar boson_star1(params.boson_star1_params,
+                              params.potential_params, params.G_Newton,
+                              params.verbosity);
+        BosonStar boson_star2(params.boson_star2_params,
+                              params.potential_params, params.G_Newton,
+                              params.verbosity);
+        compute_boson_star_profiles(boson_star1, boson_star2, params);
+
         // set up the grids, using the rhs for tagging to decide
         // where needs additional levels
-        set_grids(grids, params);
+        set_grids(grids, params, boson_star1, boson_star2);
 
         // Solve the equations!
-        status = poissonSolve(grids, params);
+        status = poissonSolve(grids, params, boson_star1, boson_star2);
 
     } // End scoping trick
 

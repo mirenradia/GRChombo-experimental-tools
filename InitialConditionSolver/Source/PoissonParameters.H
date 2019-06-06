@@ -20,6 +20,10 @@ using std::cerr;
 #include "ParmParse.H"
 #include "VariableCoeffPoissonOperator.H"
 
+// Boson Star includes
+#include "BosonStarParams.hpp"
+#include "ComplexPotential.hpp"
+
 /// Class for solver input parameters
 /**
  */
@@ -47,16 +51,9 @@ class PoissonParameters
     Real alpha;
     Real beta;
     Real G_Newton;
-    Real phi_amplitude;
-    Real phi_wavelength;
-    Real bh1_bare_mass;
-    Real bh2_bare_mass;
-    Real bh1_spin;
-    Real bh2_spin;
-    Real bh1_momentum;
-    Real bh2_momentum;
-    Real bh1_offset;
-    Real bh2_offset;
+    BosonStar_params_t boson_star1_params, boson_star2_params;
+    bool identical; // whether or not the 2 boson stars have the same profile
+    Potential::params_t potential_params;
 };
 
 /// get stuff from input file

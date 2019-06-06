@@ -1,22 +1,16 @@
 # Params for variable coefficient multigrid solver, solving the eqn
-# alpha*aCoef(x)*I - beta*bCoef(x) * laplacian = rhs
+# aCoef(x)*I - beta*bCoef(x) * laplacian = rhs
 
 # The default setup allows for 2 BHs (Bowen York data) in the presence
 # of a scalar field configuration, with either periodic BCs (constant K
 # set by integrability conditions) or asymptotically flat (constant K=0,
 # dirichlet BCs should be set to dpsi=0)
 
-# spatially-varying aCoef and bCoef are set in the example itself
-# see SetLevelData.cpp, we expect alpha = 1 and beta = -1
-# (for pure laplacian, alpha = 0, beta=-1)
-alpha = 1.0
-beta  = -1.0
-
 # AMR grid params - grid length and number of cells by direction
-L = 100.0
-N = 64 64 64
+L = 64.0
+N = 32 32 32
 # number of AMR refinement levels is max_level + 1
-max_level    = 6
+max_level    = 2
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.1
 #min box size
@@ -27,10 +21,25 @@ max_grid_size = 16
 fill_ratio   = 0.5
 buffer_size  = 3
 
+# Boson Star 1 profile and centre
+central_amplitude_CSF1 = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
+phase1 = 0.0
+star_centre1 = 40 32 32
+
+# Boson Star 2 profile and centre
+identical = 1 # If 1, then central_amplitude_CSF2 is ignored and set to central_amplitude_CSF1
+central_amplitude_CSF2 = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
+phase2 = 0.0
+star_centre2 = 24 32 32
+
+# Potential params
+scalar_mass = 1.0
+phi4_coeff = 0.0
+
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 #preCondSolverDepth = 1
-num_mg     = 1 
+num_mg     = 1
 numMGIterations = 2 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
 max_NL_iterations = 6 #non linear outside loop iterations
@@ -42,7 +51,7 @@ verbosity = 2 # higher number means more verbose output
 #coefficient_average_type = arithmetic
 coefficient_average_type = harmonic
 
-# Boundary conditions for domain-boundary faces 
+# Boundary conditions for domain-boundary faces
 # 0 for non periodic, 1 for periodic (enforces same for all)
 is_periodic = 0
 # if not periodic, then what?
@@ -54,31 +63,11 @@ bc_hi       = 0 0 0
 bc_value = 0.0
 
 # Q: "Simple, change the gravitational constant of the Universe"
-G_Newton = 1.0 
+G_Newton = 1.0
 
-# scalar field input params
-phi_amplitude = 0.1
-phi_wavelength = 1
-
-# initial conditions for Binary BH spacetimes
-# (can be with or without periodic BCs, 
-#  and in presence of scalar field)
-# if you don't want BHs just set masses to zero
-
-#BH1
-bh1_bare_mass = 0.5
-# spin about z axis (this is J_z)
-bh1_spin = 0.1
-# boost in y direction (this is P_y)
-bh1_momentum = 0.05
-# offset from center in x direction
-bh1_offset = 10.0
-
-#BH2
-bh2_bare_mass = 0.5
-# spin about z axis (this is J_z)
-bh2_spin = 0.1
-# boost in y direction (this is P_y)
-bh2_momentum = -0.05
-# offset from center in x direction
-bh2_offset = -10.0
+# Boson Star profile ODE solver params
+abs_error = 1.0e-14 # absolute error tolerance of the 1d ODE solver
+rel_error = 1.0e-14 # relative error tolerance of the 1d ODE solver
+initial_step_size = 0.015625 # initial step size for the 1d ODE solver
+max_radius = 128. # max radius the 1d ODE solver attempts to integrate out to. It should be set larger than it will actually be able to achieve.
+binary_search_tol = 5e-16 # precision to which the central value of 0.5 * log(g_tt) is found

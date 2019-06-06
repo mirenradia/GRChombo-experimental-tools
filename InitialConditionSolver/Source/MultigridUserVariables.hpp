@@ -9,16 +9,14 @@
 // assign an enum to each variable
 enum
 {
-    c_psi,
+    c_psi_0,
 
-    c_A11_0,
-    c_A12_0,
-    c_A13_0,
-    c_A22_0,
-    c_A23_0,
-    c_A33_0,
+    c_lapse_0,
 
-    c_phi_0, // matter field
+    c_phi_Re_0, // real part of scalar field
+    c_phi_Im_0, // imaginary part of scalar field
+    c_Pi_Re_0, // real part of auxiliary variable Pi = -L_n phi
+    c_Pi_Im_0, // imaginary part of auxiliary variable Pi = -L_n phi
 
     NUM_MULTIGRID_VARS
 };
@@ -26,11 +24,11 @@ enum
 namespace MultigridUserVariables
 {
 static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
-    "psi",
+    "psi_0",
 
-    "A11_0", "A12_0", "A13_0", "A22_0", "A23_0", "A33_0",
+    "lapse_0",
 
-    "phi_0"};
+    "phi_Re_0", "phi_Im_0", "Pi_Re_0", "Pi_Im_0"};
 }
 
 #endif /* MULTIGRIDUSERVARIABLES_HPP */

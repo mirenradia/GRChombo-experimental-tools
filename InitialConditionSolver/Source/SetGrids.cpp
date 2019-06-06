@@ -27,7 +27,10 @@
 // Setup grids
 // Note that there is also an option to read in grids, but here we use tagging
 // for the refinement
-int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
+int set_grids(Vector<DisjointBoxLayout> &vectGrids,
+                     PoissonParameters &a_params,
+                     BosonStar &a_boson_star1,
+                     BosonStar &a_boson_star2)
 {
     Vector<ProblemDomain> vectDomain;
     Vector<Real> vectDx;
@@ -90,7 +93,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
                                                  3 * IntVect::Unit);
 
             set_initial_conditions(*temp_multigrid_vars, *temp_dpsi, dxLevel,
-                                   a_params);
+                                   a_params, a_boson_star1, a_boson_star2);
 
             // set condition for regrid - use the integrability condition
             // integral
