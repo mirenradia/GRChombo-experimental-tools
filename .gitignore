@@ -6,3 +6,4 @@ p/
 pout.*
 *.hdf5
 *.pbs
+.gcc-flags.json
