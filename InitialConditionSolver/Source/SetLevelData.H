@@ -41,10 +41,12 @@ extern void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                                    BosonStar &a_boson_star2);
 
 inline void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
-                                       FArrayBox &a_dpsi_box,
-                                       const IntVect &a_iv,
-                                       const RealVect &a_dx,
-                                       const PoissonParameters &a_params);
+                                FArrayBox &a_dpsi_box,
+                                const IntVect &a_iv,
+                                const RealVect &a_dx,
+                                const PoissonParameters &a_params,
+                                BosonStar &a_boson_star1,
+                                BosonStar &a_boson_star2);
 
 extern void set_rhs(LevelData<FArrayBox> &a_rhs,
                     LevelData<FArrayBox> &a_multigrid_vars,
@@ -84,8 +86,6 @@ extern void set_output_data(LevelData<FArrayBox> &a_vars,
 
 inline void set_non_const_output_cell(const FArrayBox &a_multigrid_vars_box,
                                       FArrayBox &a_grchombo_vars_box,
-                                      const IntVect &a_iv,
-                                      const RealVect &a_dx,
-                                      const PoissonParameters &a_params);
+                                      const IntVect &a_iv);
 
 #endif

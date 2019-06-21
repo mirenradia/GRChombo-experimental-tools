@@ -56,7 +56,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
         for (bit.begin(); bit.ok(); ++bit)
         {
             set_initial_multigrid_cell(multigrid_vars_box, dpsi_box,
-                bit(), a_dx, a_paramsm, a_boson_star1, a_boson_star2);
+                bit(), a_dx, a_params, a_boson_star1, a_boson_star2);
         }
         // now fill boundary ghost cells if using nonperiodic boundaries in
         // GRChombo. Note that these cells are unused in the
@@ -124,8 +124,8 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
     // 1/chi = 1/chi1 + 1/chi2 - 1
     Real chi = (chi1 * chi2) / (chi1 + chi2 - chi1 * chi2);
     Real lapse = sqrt(lapse1 * lapse1 + lapse2 * lapse2 - 1.0);
-    a_multigrid_vars_box(iv, c_psi_0) = pow(chi, -0.25);
-    a_multigrid_vars_box(iv, c_lapse_0) = lapse;
+    a_multigrid_vars_box(a_iv, c_psi_0) = pow(chi, -0.25);
+    a_multigrid_vars_box(a_iv, c_lapse_0) = lapse;
 
     // Matter superposition
     Real phase1 = a_params.boson_star1_params.phase;
@@ -136,19 +136,19 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
                         * a_params.potential_params.scalar_mass;
     Real mod_phi1 = a_boson_star1.m_1d_sol.m_phi(r1);
     Real mod_phi2 = a_boson_star2.m_1d_sol.m_phi(r2);
-    a_multigrid_vars_box(iv, c_phi_Re_0) = mod_phi1 * cos(phase1)
+    a_multigrid_vars_box(a_iv, c_phi_Re_0) = mod_phi1 * cos(phase1)
                                          + mod_phi2 * cos(phase2);
-    a_multigrid_vars_box(iv, c_phi_Im_0) = mod_phi1 * sin(phase1)
+    a_multigrid_vars_box(a_iv, c_phi_Im_0) = mod_phi1 * sin(phase1)
                                          + mod_phi2 * sin(phase2);
-    a_multigrid_vars_box(iv, c_Pi_Re_0)
+    a_multigrid_vars_box(a_iv, c_Pi_Re_0)
         = frequency1 * mod_phi1 * sin(phase1) / lapse1
         + frequency2 * mod_phi2 * sin(phase2) / lapse2;
-    a_multigrid_vars_box(iv, c_Pi_Im_0)
+    a_multigrid_vars_box(a_iv, c_Pi_Im_0)
         = -frequency1 * mod_phi1 * cos(phase1) / lapse1
          - frequency2 * mod_phi2 * cos(phase2) / lapse2;
 
     // dpsi is initially zero
-    a_dpsi_box(iv, 0) = 0.0;
+    a_dpsi_box(a_iv, 0) = 0.0;
 } //end set set_initial_multigrid_cell
 
 // set the rhs source for the poisson eqn
@@ -401,7 +401,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
         for (bit.begin(); bit.ok(); ++bit)
         {
             set_non_const_output_cell(multigrid_vars_box,
-                grchombo_vars_box, bit(), a_dx, a_params);
+                grchombo_vars_box, bit());
         }
 
         // finally non-constant boundary ghosts
@@ -427,7 +427,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
                     for (bbit.begin(); bbit.ok(); ++bbit)
                     {
                         set_non_const_output_cell(multigrid_vars_box,
-                            grchombo_vars_box, bbit(), a_dx, a_params);
+                            grchombo_vars_box, bbit());
                     } // end loop through boundary box
                 } // end loop over sides
             } // end if (periodic[idir])
@@ -437,24 +437,22 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
 void set_non_const_output_cell(const FArrayBox &a_multigrid_vars_box,
                                FArrayBox &a_grchombo_vars_box,
-                               const IntVect &a_iv,
-                               const RealVect &a_dx,
-                               const PoissonParameters &a_params)
+                               const IntVect &a_iv)
 {
     // GRChombo conformal factor chi = psi^-4
-    Real chi = pow(a_multigrid_vars_box(iv, c_psi_0), -4.0);
-    a_grchombo_vars_box(iv, c_chi) = chi;
+    Real chi = pow(a_multigrid_vars_box(a_iv, c_psi_0), -4.0);
+    a_grchombo_vars_box(a_iv, c_chi) = chi;
 
     // Copy lapse
-    a_grchombo_vars_box(iv, c_lapse) = a_multigrid_vars_box(iv, c_lapse_0);
+    a_grchombo_vars_box(a_iv, c_lapse) = a_multigrid_vars_box(a_iv, c_lapse_0);
 
     // Copy phi and Pi
-    a_grchombo_vars_box(iv, c_phi_Re)
-        = a_multigrid_vars_box(iv, c_phi_Re_0);
-    a_grchombo_vars_box(iv, c_phi_Im)
-        = a_multigrid_vars_box(iv, c_phi_Im_0);
-    a_grchombo_vars_box(iv, c_Pi_Re)
-        = a_multigrid_vars_box(iv, c_Pi_Re_0);
-    a_grchombo_vars_box(iv, c_Pi_Im)
-        = a_multigrid_vars_box(iv, c_Pi_Im_0);
+    a_grchombo_vars_box(a_iv, c_phi_Re)
+        = a_multigrid_vars_box(a_iv, c_phi_Re_0);
+    a_grchombo_vars_box(a_iv, c_phi_Im)
+        = a_multigrid_vars_box(a_iv, c_phi_Im_0);
+    a_grchombo_vars_box(a_iv, c_Pi_Re)
+        = a_multigrid_vars_box(a_iv, c_Pi_Re_0);
+    a_grchombo_vars_box(a_iv, c_Pi_Im)
+        = a_multigrid_vars_box(a_iv, c_Pi_Im_0);
 }
