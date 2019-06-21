@@ -14,6 +14,7 @@ using std::cerr;
 #include "FArrayBox.H"
 #include "GRChomboUserVariables.hpp"
 #include "MultigridUserVariables.hpp"
+#include "GRChomboBCs.hpp"
 #include "ParmParse.H"
 #include "PoissonParameters.H"
 #include "VariableCoeffPoissonOperator.H"
@@ -26,12 +27,24 @@ using std::cerr;
 // various functions operating on grids to set up data for initial
 // conditions, spatially dependent coefficients and rhs etc
 
+inline void get_loc(RealVect &a_out_loc,
+                    const IntVect &a_iv,
+                    const RealVect &a_dx,
+                    const PoissonParameters &a_params);
+
 extern void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                                    LevelData<FArrayBox> &a_dpsi,
+                                   GRChomboBCs &a_grchombo_boundaries,
                                    const RealVect &a_dx,
                                    const PoissonParameters &a_params,
                                    BosonStar &a_boson_star1,
                                    BosonStar &a_boson_star2);
+
+inline void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
+                                       FArrayBox &a_dpsi_box,
+                                       const IntVect &a_iv,
+                                       const RealVect &a_dx,
+                                       const PoissonParameters &a_params);
 
 extern void set_rhs(LevelData<FArrayBox> &a_rhs,
                     LevelData<FArrayBox> &a_multigrid_vars,
@@ -65,7 +78,14 @@ extern void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
 
 extern void set_output_data(LevelData<FArrayBox> &a_vars,
                             LevelData<FArrayBox> &a_multigrid_vars,
+                            GRChomboBCs &a_grchombo_boundaries,
                             const PoissonParameters &a_params,
                             const RealVect &a_dx);
+
+inline void set_non_const_output_cell(const FArrayBox &a_multigrid_vars_box,
+                                      FArrayBox &a_grchombo_vars_box,
+                                      const IntVect &a_iv,
+                                      const RealVect &a_dx,
+                                      const PoissonParameters &a_params);
 
 #endif

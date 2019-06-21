@@ -19,6 +19,7 @@ using std::cerr;
 #include "FArrayBox.H"
 #include "ParmParse.H"
 #include "VariableCoeffPoissonOperator.H"
+#include "GRChomboBCs.hpp"
 
 // Boson Star includes
 #include "BosonStarParams.hpp"
@@ -48,6 +49,10 @@ class PoissonParameters
     RealVect domainLength;
     RealVect probLo;
     RealVect probHi;
+    int num_ghosts;
+    GRChomboBCs::params_t grchombo_boundary_params;
+    bool symmetric_boundaries_exist;
+    bool nonperiodic_boundaries_exist;
     Real alpha;
     Real beta;
     Real G_Newton;

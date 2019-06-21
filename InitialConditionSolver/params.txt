@@ -62,6 +62,23 @@ bc_hi       = 0 0 0
 # note bc_value probably 0 because it is applied to dpsi at boundary (not psi)
 bc_value = 0.0
 
+# GRChombo boundary parameters:
+# if not periodic, then specify the boundary type
+# 0 = static, 1 = sommerfeld, 2 = reflective
+# (see BoundaryConditions.hpp for details)
+hi_boundary = 1 1 1
+lo_boundary = 1 1 1
+
+# if reflective boundaries selected, must set
+# parity of all vars (in order given by MultigridUserVariables.hpp)
+# 0 = even
+# 1,2,3 = odd x, y, z
+# 4,5,6 = odd xy, yz, xz
+vars_parity = 0             #psi
+              0 4 6 0 5 0   #Aij
+              0             #phi
+
+
 # Q: "Simple, change the gravitational constant of the Universe"
 G_Newton = 1.0
 
