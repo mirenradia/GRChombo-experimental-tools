@@ -48,6 +48,8 @@ enum
     c_Pi_Re, // real part of auxiliary variable Pi = -L_n phi
     c_Pi_Im, // imaginary part of auxiliary variable Pi = -L_n phi
 
+    c_mod_phi, // modulus of the scalar field
+
     c_Madm,
     c_Jadm,
 
@@ -87,6 +89,8 @@ static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
     "B1",     "B2",     "B3",
 
     "phi_Re",   "phi_Im",   "Pi_Re",    "Pi_Im",
+
+    "mod_phi",
 
     "Madm",   "Jadm",
 
