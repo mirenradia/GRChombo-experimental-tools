@@ -77,10 +77,14 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
     }
     if(a_params.thomas_superposition)
     {
+        // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_factor
+        // so chi ~ 1/(2 - chi_subtraction_factor) at spatial infinity
+        Real chi_subtraction_factor =
+            1. / a_boson_star1.m_1d_sol.m_chi(a_params.star_distance);
+        Real chi_asymptotic = 1. / (2. - chi_subtraction_factor);
         pout() << "\nUsing Thomas superposition method:\n";
         pout() << "Asymptotic value of chi = " << std::setprecision(16)
-               << a_boson_star1.m_1d_sol.m_chi(a_params.star_distance)
-               << "\n" << std::endl;
+               << chi_asymptotic << "\n" << std::endl;
     }
 }
 

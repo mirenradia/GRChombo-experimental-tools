@@ -121,15 +121,17 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
     Real lapse2 = a_boson_star2.m_1d_sol.m_lapse(r2);
 
     // superposed conformal factor
-    // 1/chi = 1/chi1 + 1/chi2 - factor
-    // factor = 1/chi1(<distance between stars>)
-    Real factor = 1.0;
+    // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_factor
+    // chi_subtraction_factor = 1/chi1(<distance between stars>)
+    Real chi_subtraction_factor = 1.0;
     if(a_params.thomas_superposition)
     {
-        factor = 1. / a_boson_star1.m_1d_sol.m_chi(a_params.star_distance);
+        chi_subtraction_factor
+            = 1. / a_boson_star1.m_1d_sol.m_chi(a_params.star_distance);
     }
 
-    Real chi = (chi1 * chi2) / (chi1 + chi2 - factor * chi1 * chi2);
+    Real chi = (chi1 * chi2)
+               / (chi1 + chi2 - chi_subtraction_factor * chi1 * chi2);
     Real lapse = sqrt(lapse1 * lapse1 + lapse2 * lapse2 - 1.0);
     a_multigrid_vars_box(a_iv, c_psi_0) = pow(chi, -0.25);
     a_multigrid_vars_box(a_iv, c_lapse_0) = lapse;
