@@ -65,16 +65,22 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
     {
         if(a_params.verbosity)
         {
-            pout() << "compute_boson_star_profiles: Boson star 2 identical"
+            pout() << "\ncompute_boson_star_profiles: Boson star 2 identical"
                       " to star 1; skipping profile computation" << std::endl;
         }
-
         // Copy boson_star1 into boson_star2 keeping phase and centre
         auto boson_star2_centre = a_boson_star2.m_params_BosonStar.star_centre;
         double boson_star2_phase = a_boson_star2.m_params_BosonStar.phase;
         a_boson_star2 = a_boson_star1;
         a_boson_star2.m_params_BosonStar.star_centre = boson_star2_centre;
         a_boson_star2.m_params_BosonStar.phase = boson_star2_phase;
+    }
+    if(a_params.thomas_superposition)
+    {
+        pout() << "\nUsing Thomas superposition method:\n";
+        pout() << "Asymptotic value of chi = " << std::setprecision(16)
+               << a_boson_star1.m_1d_sol.m_chi(a_params.star_distance)
+               << "\n" << std::endl;
     }
 }
 
