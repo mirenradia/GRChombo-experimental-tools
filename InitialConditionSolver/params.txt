@@ -32,6 +32,9 @@ central_amplitude_CSF2 = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may
 phase2 = 0.0
 star_centre2 = -16. 0. 0. # Note this is displacement from the centre of the grid
 
+# thomas superposition method
+thomas_superposition = 1
+
 # Potential params
 scalar_mass = 1.0
 phi4_coeff = 0.0

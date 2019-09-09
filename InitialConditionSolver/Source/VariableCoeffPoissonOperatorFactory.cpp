@@ -31,16 +31,17 @@ defineOperatorFactory(const Vector<DisjointBoxLayout> &a_grids,
                       const Vector<ProblemDomain> &a_vectDomain,
                       Vector<RefCountedPtr<LevelData<FArrayBox>>> &a_aCoef,
                       Vector<RefCountedPtr<LevelData<FArrayBox>>> &a_bCoef,
-                      const PoissonParameters &a_params)
+                      const PoissonParameters &a_params,
+                      RefCountedPtr<BCFunction> a_bc_function_ptr)
 {
-    ParmParse pp2;
-
     VariableCoeffPoissonOperatorFactory *opFactory =
         new VariableCoeffPoissonOperatorFactory;
 
+    //RefCountedPtr<BCFunction> bc_holder(&a_set_bcs);
+
     opFactory->define(a_params.coarsestDomain, a_grids, a_params.refRatio,
-                      a_params.coarsestDx, &ParseBC, a_params.alpha, a_aCoef,
-                      a_params.beta, a_bCoef);
+                      a_params.coarsestDx, a_bc_function_ptr, a_params.alpha,
+                      a_aCoef, a_params.beta, a_bCoef);
 
     if (a_params.coefficient_average_type >= 0)
     {

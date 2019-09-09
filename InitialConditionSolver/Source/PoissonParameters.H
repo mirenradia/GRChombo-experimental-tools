@@ -19,6 +19,7 @@ using std::cerr;
 #include "FArrayBox.H"
 #include "ParmParse.H"
 #include "VariableCoeffPoissonOperator.H"
+#include "SetBCs.H"
 #include "GRChomboBCs.hpp"
 
 // Boson Star includes
@@ -50,6 +51,7 @@ class PoissonParameters
     RealVect probLo;
     RealVect probHi;
     int num_ghosts;
+    SetBCs::params_t bc_params;
     GRChomboBCs::params_t grchombo_boundary_params;
     bool symmetric_boundaries_exist;
     bool nonperiodic_boundaries_exist;
@@ -58,6 +60,8 @@ class PoissonParameters
     Real G_Newton;
     BosonStar_params_t boson_star1_params, boson_star2_params;
     bool identical; // whether or not the 2 boson stars have the same profile
+    bool thomas_superposition;
+    Real star_distance;
     Potential::params_t potential_params;
 };
 

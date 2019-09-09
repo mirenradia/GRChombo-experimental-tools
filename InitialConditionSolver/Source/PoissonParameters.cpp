@@ -113,6 +113,13 @@ void getPoissonParameters(PoissonParameters &a_params)
     // Hardcode num_ghosts to 3 as this is what GRChombo needs
     a_params.num_ghosts = 3;
 
+    // Load elliptic operator BC params
+    a_params.bc_params.bc_lo.resize(SpaceDim);
+    a_params.bc_params.bc_hi.resize(SpaceDim);
+    pp.load("bc_lo", a_params.bc_params.bc_lo, 0, SpaceDim);
+    pp.load("bc_hi", a_params.bc_params.bc_hi, 0, SpaceDim);
+    pp.load("bc_value", a_params.bc_params.value, 0.0);
+
     // Periodicity - for the moment enforce same in all directions
     ProblemDomain crseDom(crseDomBox);
     int is_periodic;
@@ -121,6 +128,11 @@ void getPoissonParameters(PoissonParameters &a_params)
     a_params.periodic.assign(is_periodic);
     for (int dir = 0; dir < SpaceDim; dir++)
     {
+        if (a_params.periodic[dir])
+        {
+            a_params.bc_params.bc_lo[dir] = 2;
+            a_params.bc_params.bc_hi[dir] = 2;
+        }
         crseDom.setPeriodic(dir, is_periodic);
     }
     a_params.coarsestDomain = crseDom;
@@ -246,6 +258,15 @@ void getPoissonParameters(PoissonParameters &a_params)
     // Are the two stars' profiles identical
     pp.load("identical", a_params.identical, false);
 
+    // Do we subtract a non-unit multiple of the Minkowski 3-metric in
+    // superposition in order to reduce radial excitation
+    // Note this only works in the case identical=true
+    if (a_params.identical)
+    {
+        pp.load("thomas_superposition", a_params.thomas_superposition, false);
+    }
+    else a_params.thomas_superposition = false;
+
     // Boson Star 2 parameters
     if (!a_params.identical)
     {
@@ -269,6 +290,15 @@ void getPoissonParameters(PoissonParameters &a_params)
                            << a_params.boson_star2_params.star_centre[1] << ", "
                            << a_params.boson_star2_params.star_centre[2] << ")"
            << endl;
+
+
+    RealVect star_displacement;
+    for(int idir = 0; idir < SpaceDim; idir++)
+    {
+        star_displacement[idir] = a_params.boson_star1_params.star_centre[idir]
+                                - a_params.boson_star2_params.star_centre[idir];
+    }
+    a_params.star_distance = star_displacement.vectorLength();
 
     // Potential params
     pp.load("scalar_mass", a_params.potential_params.scalar_mass, 1.0);

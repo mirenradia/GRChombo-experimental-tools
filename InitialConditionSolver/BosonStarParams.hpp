@@ -14,6 +14,7 @@ struct BosonStar_params_t
     double central_amplitude_CSF; //!< Central amplitude of the star
     double phase;
     std::array<double, CH_SPACEDIM> star_centre; //!< coordinates of the centre of the star
+    int excitation_level = 0; //!< how excited the state is (0 is the ground state)
     double abs_error; //!< absolute error tolerance for the 1D ODE integrator
     double rel_error; //!< relative error tolerance for the 1D ODE integrator
     double initial_step_size; //!< initial step size for the 1D ODE integrator

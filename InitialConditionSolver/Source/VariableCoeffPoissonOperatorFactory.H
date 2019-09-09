@@ -23,7 +23,8 @@ defineOperatorFactory(const Vector<DisjointBoxLayout> &a_grids,
                       const Vector<ProblemDomain> &a_vectDom,
                       Vector<RefCountedPtr<LevelData<FArrayBox>>> &a_aCoef,
                       Vector<RefCountedPtr<LevelData<FArrayBox>>> &a_bCoef,
-                      const PoissonParameters &a_params);
+                      const PoissonParameters &a_params,
+                      RefCountedPtr<BCFunction> a_bc_function_ptr);
 
 /**
    Factory to create VariableCoeffPoissonOperators

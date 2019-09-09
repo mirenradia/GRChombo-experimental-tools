@@ -194,13 +194,18 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params);
         }
 
+        RefCountedPtr<SetBCs> set_bcs_ptr(new
+                                SetBCs(NL_iter, a_params.bc_params));
+        set_bcs_ptr->printBCs();
+        RefCountedPtr<BCFunction> bc_function_ptr(set_bcs_ptr);
+
         // set up solver factory
         RefCountedPtr<AMRLevelOpFactory<LevelData<FArrayBox>>> opFactory =
             RefCountedPtr<AMRLevelOpFactory<LevelData<FArrayBox>>>(
                 defineOperatorFactory(a_grids, vectDomains, aCoef, bCoef,
-                                      a_params));
+                                      a_params, bc_function_ptr));
 
-        // define the multi level operator
+        // define the multi erator
         mlOp.define(a_grids, a_params.refRatio, vectDomains, vectDx, opFactory,
                     lBase);
 

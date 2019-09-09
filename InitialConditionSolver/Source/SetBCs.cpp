@@ -21,142 +21,114 @@
 #include "parstream.H"
 #include <cmath>
 
-// Global BCRS definitions
-std::vector<bool> GlobalBCRS::s_printedThatLo =
-    std::vector<bool>(SpaceDim, false);
-std::vector<bool> GlobalBCRS::s_printedThatHi =
-    std::vector<bool>(SpaceDim, false);
-std::vector<int> GlobalBCRS::s_bcLo = std::vector<int>();
-std::vector<int> GlobalBCRS::s_bcHi = std::vector<int>();
-RealVect GlobalBCRS::s_trigvec = RealVect::Zero;
-bool GlobalBCRS::s_areBCsParsed = false;
-bool GlobalBCRS::s_valueParsed = false;
-bool GlobalBCRS::s_trigParsed = false;
-
-// BCValueHolder class, which is a pointer to a void-type function with the 4
-// arguements given pos [x,y,z] position on center of cell edge int dir
-// direction, x being 0 int side -1 for low, +1 = high, fill in the a_values
-// array
-
-void ParseValue(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
+void BCValue::operator()(Real*           a_pos,
+                         int*            a_dir,
+                         Side::LoHiSide* a_side,
+                         Real*           a_value)
 {
-    ParmParse pp;
-    Real bcVal;
-    pp.get("bc_value", bcVal);
-    a_values[0] = bcVal;
+    *(a_value) = m_value;
 }
 
-void ParseBC(FArrayBox &a_state, const Box &a_valid,
-             const ProblemDomain &a_domain, Real a_dx, bool a_homogeneous)
+SetBCs::SetBCs(const int a_NL_iter, const params_t &a_params)
+    : m_NL_iter(a_NL_iter), m_params(a_params),
+      m_bc_value_ptr(new BCValue(m_params.value)),
+      m_bc_zero_ptr(new BCValue(0.0)) {}
+
+void SetBCs::printSideBCs(Side::LoHiSide a_side)
+{
+    std::string side_str = (a_side == Side::Lo) ? "low" : "high";
+    std::vector<int>& bc = (a_side == Side::Lo) ?
+        m_params.bc_lo : m_params.bc_hi;
+    for(int idir = 0; idir < CH_SPACEDIM; ++idir)
+    {
+        std::string bc_str;
+        switch(bc[idir])
+        {
+        case 0:
+            bc_str = "Constant Dirichlet";
+            break;
+        case 1:
+            bc_str = "Constant Neumann";
+            break;
+        case 2:
+            bc_str = "Periodic";
+            break;
+        case 3:
+            bc_str = "NL Dirichlet";
+            break;
+        default:
+            MayDay::Error("bogus bc flag");
+        }
+        pout() << bc_str << " bcs imposed for " << side_str
+               << " side in direction " << idir << endl;
+    }
+}
+
+void SetBCs::printBCs()
+{
+    if (m_NL_iter == 0)
+    {
+        printSideBCs(Side::Lo);
+        printSideBCs(Side::Hi);
+    }
+}
+
+void SetBCs::SetSideBCs(FArrayBox &a_state, const Box &a_valid,
+                        const ProblemDomain &a_domain, Real a_dx,
+                        bool a_homogeneous, Side::LoHiSide a_side)
 {
     if (!a_domain.domainBox().contains(a_state.box()))
     {
-
-        if (!GlobalBCRS::s_areBCsParsed)
-        {
-            ParmParse pp;
-            pp.getarr("bc_lo", GlobalBCRS::s_bcLo, 0, SpaceDim);
-            pp.getarr("bc_hi", GlobalBCRS::s_bcHi, 0, SpaceDim);
-            GlobalBCRS::s_areBCsParsed = true;
-        }
-
         Box valid = a_valid;
-
-        for (int i = 0; i < CH_SPACEDIM; ++i)
+        std::vector<int>& bc = (a_side == Side::Lo) ?
+            m_params.bc_lo : m_params.bc_hi;
+        BCValueHolder bc_value_holder(m_bc_value_ptr);
+        BCValueHolder bc_value_zero_holder(m_bc_zero_ptr);
+        for (int idir = 0; idir < CH_SPACEDIM; ++idir)
         {
-
             // periodic? If not, check if Dirichlet or Neumann
-            if (!a_domain.isPeriodic(i))
+            if (!a_domain.isPeriodic(idir))
             {
-                Box ghostBoxLo = adjCellBox(valid, i, Side::Lo, 1);
-                Box ghostBoxHi = adjCellBox(valid, i, Side::Hi, 1);
-                if (!a_domain.domainBox().contains(ghostBoxLo))
+                Box ghostBox = adjCellBox(valid, idir, a_side, 1);
+                if (!a_domain.domainBox().contains(ghostBox))
                 {
-                    if (GlobalBCRS::s_bcLo[i] == 1)
+                    switch(bc[idir])
                     {
-                        if (!GlobalBCRS::s_printedThatLo[i])
-                        {
-                            GlobalBCRS::s_printedThatLo[i] = true;
-                            pout() << "Constant Neumann bcs imposed for low "
-                                      "side direction "
-                                   << i << endl;
-                        }
+                    case 0:
+                        DiriBC(a_state, valid, a_dx, a_homogeneous,
+                               bc_value_holder, idir, a_side);
+                        break;
+                    case 1:
                         NeumBC(a_state, valid, a_dx, a_homogeneous,
-                               ParseValue, // BCValueHolder class
-                               i, Side::Lo);
-                    }
-                    else if (GlobalBCRS::s_bcLo[i] == 0)
-                    {
-                        if (!GlobalBCRS::s_printedThatLo[i])
+                               bc_value_holder, idir, a_side);
+                        break;
+                    case 2:
+                        break;// periodic case so no need to do anything
+                    case 3:
+                        if (m_NL_iter == 0)
                         {
-                            GlobalBCRS::s_printedThatLo[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed for low "
-                                      "side direction "
-                                   << i << endl;
+                            DiriBC(a_state, valid, a_dx, a_homogeneous,
+                                   bc_value_holder, idir, a_side);
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, ParseValue,
-                               i, Side::Lo);
-                    }
-                    else if (GlobalBCRS::s_bcLo[i] == 2)
-                    {
-                        if (!GlobalBCRS::s_printedThatLo[i])
+                        else
                         {
-                            GlobalBCRS::s_printedThatLo[i] = true;
-                            pout() << "Periodic bcs imposed for low side "
-                                      "direction "
-                                   << i << endl;
+                            DiriBC(a_state, valid, a_dx, a_homogeneous,
+                                   bc_value_zero_holder, idir, a_side);
                         }
-                    }
-                    else
-                    {
-                        MayDay::Error("bogus bc flag low side");
+                        break;
+                    default:
+                        MayDay::Error("bogus bc flag side");
                     }
                 }
-
-                if (!a_domain.domainBox().contains(ghostBoxHi))
-                {
-                    if (GlobalBCRS::s_bcHi[i] == 1)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi[i])
-                        {
-                            GlobalBCRS::s_printedThatHi[i] = true;
-                            pout() << "Constant Neumann bcs imposed for high "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, ParseValue,
-                               i, Side::Hi);
-                    }
-                    else if (GlobalBCRS::s_bcHi[i] == 0)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi[i])
-                        {
-                            GlobalBCRS::s_printedThatHi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed for high "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, ParseValue,
-                               i, Side::Hi);
-                    }
-                    else if (GlobalBCRS::s_bcHi[i] == 2)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi[i])
-                        {
-                            GlobalBCRS::s_printedThatHi[i] = true;
-                            pout() << "Periodic bcs imposed for high side "
-                                      "direction "
-                                   << i << endl;
-                        }
-                    }
-                    else
-                    {
-                        MayDay::Error("bogus bc flag high side");
-                    }
-                }
-
             } // else - is periodic
-
         } // close for idir
     }
+}
+
+void SetBCs::operator() (FArrayBox &a_state, const Box &a_valid,
+                         const ProblemDomain &a_domain, Real a_dx,
+                         bool a_homogeneous)
+{
+    SetSideBCs(a_state, a_valid, a_domain, a_dx, a_homogeneous, Side::Lo);
+    SetSideBCs(a_state, a_valid, a_domain, a_dx, a_homogeneous, Side::Hi);
 }
