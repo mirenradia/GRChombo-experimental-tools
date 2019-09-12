@@ -267,6 +267,8 @@ void getPoissonParameters(PoissonParameters &a_params)
     }
     else a_params.thomas_superposition = false;
 
+    pp.load("rescale_radii", a_params.rescale_radii, false);
+
     // Boson Star 2 parameters
     if (!a_params.identical)
     {

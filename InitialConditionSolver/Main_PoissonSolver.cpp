@@ -44,7 +44,7 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
                                  BosonStar &a_boson_star2,
                                  const PoissonParameters &a_params)
 {
-    if(a_params.verbosity)
+    if (a_params.verbosity)
     {
         pout() << "compute_boson_star_profiles: Computing boson star 1 profile"
                << std::endl;
@@ -52,7 +52,7 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
     a_boson_star1.compute_1d_solution(3.5 * a_params.domainLength[0]);
 
     // only need to compute profile for 2nd star if different from first
-    if(!a_params.identical)
+    if (!a_params.identical)
     {
         if(a_params.verbosity)
         {
@@ -63,7 +63,7 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
     }
     else
     {
-        if(a_params.verbosity)
+        if (a_params.verbosity)
         {
             pout() << "\ncompute_boson_star_profiles: Boson star 2 identical"
                       " to star 1; skipping profile computation" << std::endl;
@@ -75,7 +75,13 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
         a_boson_star2.m_params_BosonStar.star_centre = boson_star2_centre;
         a_boson_star2.m_params_BosonStar.phase = boson_star2_phase;
     }
-    if(a_params.thomas_superposition)
+
+    if (a_params.rescale_radii)
+    {
+        a_boson_star1.m_1d_sol.rescale_isotropic_radius(a_params.star_distance);
+        a_boson_star2.m_1d_sol.rescale_isotropic_radius(a_params.star_distance);
+    }
+    if (a_params.thomas_superposition)
     {
         // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_factor
         // so chi ~ 1/(2 - chi_subtraction_factor) at spatial infinity

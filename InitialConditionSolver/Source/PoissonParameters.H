@@ -61,6 +61,7 @@ class PoissonParameters
     BosonStar_params_t boson_star1_params, boson_star2_params;
     bool identical; // whether or not the 2 boson stars have the same profile
     bool thomas_superposition;
+    bool rescale_radii;
     Real star_distance;
     Potential::params_t potential_params;
 };
