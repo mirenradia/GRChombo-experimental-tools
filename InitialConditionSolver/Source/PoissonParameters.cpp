@@ -267,7 +267,13 @@ void getPoissonParameters(PoissonParameters &a_params)
     }
     else a_params.thomas_superposition = false;
 
-    pp.load("rescale_radii", a_params.rescale_radii, false);
+    // Instead try rescaling the individual stars' isotropic radii in order to
+    // reduce radial excitation.
+    if (!a_params.thomas_superposition)
+    {
+        pp.load("rescale_radii", a_params.rescale_radii, false);
+    }
+    else a_params.rescale_radii = false;
 
     // Boson Star 2 parameters
     if (!a_params.identical)

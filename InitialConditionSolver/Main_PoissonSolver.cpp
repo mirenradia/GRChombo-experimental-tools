@@ -42,7 +42,7 @@ using std::cerr;
 
 void compute_boson_star_profiles(BosonStar &a_boson_star1,
                                  BosonStar &a_boson_star2,
-                                 const PoissonParameters &a_params)
+                                 PoissonParameters &a_params)
 {
     if (a_params.verbosity)
     {
@@ -78,16 +78,28 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
 
     if (a_params.rescale_radii)
     {
-        a_boson_star1.m_1d_sol.rescale_isotropic_radius(a_params.star_distance);
-        a_boson_star2.m_1d_sol.rescale_isotropic_radius(a_params.star_distance);
+        a_params.chi_subtraction_constant = a_boson_star1.m_1d_sol.
+            get_chi_subtraction_constant_with(a_boson_star2.m_1d_sol,
+            a_params.star_distance);
+
+        Real target_chi = 1.0 / a_params.chi_subtraction_constant;
+
+        a_boson_star1.m_1d_sol.rescale_isotropic_radius(a_params.star_distance,
+            target_chi);
+        a_boson_star2.m_1d_sol.rescale_isotropic_radius(a_params.star_distance,
+            target_chi);
+
+        pout() << "\nUsing rescaling method:\n";
+        pout() << "Chi subtraction constant = "
+               << a_params.chi_subtraction_constant << "\n" << std::endl;
     }
     if (a_params.thomas_superposition)
     {
-        // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_factor
-        // so chi ~ 1/(2 - chi_subtraction_factor) at spatial infinity
-        Real chi_subtraction_factor =
+        // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_constant
+        // so chi ~ 1/(2 - chi_subtraction_constant) at spatial infinity
+        a_params.chi_subtraction_constant =
             1. / a_boson_star1.m_1d_sol.m_chi(a_params.star_distance);
-        Real chi_asymptotic = 1. / (2. - chi_subtraction_factor);
+        Real chi_asymptotic = 1. / (2. - a_params.chi_subtraction_constant);
         pout() << "\nUsing Thomas superposition method:\n";
         pout() << "Asymptotic value of chi = " << std::setprecision(16)
                << chi_asymptotic << "\n" << std::endl;

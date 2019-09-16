@@ -42,7 +42,7 @@ public:
 
     friend void compute_boson_star_profiles(BosonStar &a_boson_star1,
                                             BosonStar &a_boson_star2,
-                                            const PoissonParameters &a_params);
+                                            PoissonParameters &a_params);
 
 protected:
     double m_G_Newton;
