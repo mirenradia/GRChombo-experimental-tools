@@ -1,0 +1,96 @@
+# Params for variable coefficient multigrid solver, solving the eqn
+# aCoef(x)*I - beta*bCoef(x) * laplacian = rhs
+
+# The default setup allows for 2 BHs (Bowen York data) in the presence
+# of a scalar field configuration, with either periodic BCs (constant K
+# set by integrability conditions) or asymptotically flat (constant K=0,
+# dirichlet BCs should be set to dpsi=0)
+
+# AMR grid params - grid length and number of cells by direction
+L = 64.0
+N = 32 32 32
+# number of AMR refinement levels is max_level + 1
+max_level    = 3
+# Threshold for AMR refinement, based on magnitude of rhs
+refine_threshold = 0.1
+#min box size
+block_factor = 8
+#max box size
+max_grid_size = 16
+# how aggressively to regrid
+fill_ratio   = 0.5
+buffer_size  = 3
+
+# Boson Star 1 profile and centre
+central_amplitude_CSF1 = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
+phase1 = 0.0
+star_centre1 = 16. 0. 0. # Note this is displacement from the centre of the grid
+
+# Boson Star 2 profile and centre
+identical = 1 # If 1, then central_amplitude_CSF2 is ignored and set to central_amplitude_CSF1
+central_amplitude_CSF2 = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
+phase2 = 0.0
+star_centre2 = -16. 0. 0. # Note this is displacement from the centre of the grid
+
+# thomas superposition method
+thomas_superposition = 0
+
+# rescale radii of the individual boson stars to make the superposition better
+rescale_radii = 1
+
+# Potential params
+scalar_mass = 1.0
+phi4_coeff = 0.0
+
+# Setup multigrid params
+numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
+#preCondSolverDepth = 1
+num_mg     = 1
+numMGIterations = 2 #this is the number of MG v-cycles in the preconditioner
+max_iterations = 100 #max number of solver iterations
+max_NL_iterations = 10 #non linear outside loop iterations
+tolerance  = 1.0e-10  #solver tolerance for declaring convergence
+hang       = 1.0e-11  #solver tolerance for deciding when we're hung
+verbosity = 2 # higher number means more verbose output
+
+# how to average face-centered coefficients to coarser multigrid levels
+#coefficient_average_type = arithmetic
+coefficient_average_type = harmonic
+
+# Boundary conditions for domain-boundary faces
+# 0 for non periodic, 1 for periodic (enforces same for all)
+is_periodic = 0
+# if not periodic, then what?
+# 1 -> const Neumann (gradient), 0 -> const Dirichlet (value)
+bc_lo       = 0 0 0
+bc_hi       = 0 0 0
+# And set the constant value of these conditions
+# note bc_value probably 0 because it is applied to dpsi at boundary (not psi)
+bc_value = 0.0
+
+# GRChombo boundary parameters:
+# if not periodic, then specify the boundary type
+# 0 = static, 1 = sommerfeld, 2 = reflective
+# (see BoundaryConditions.hpp for details)
+hi_boundary = 1 1 1
+lo_boundary = 1 1 1
+
+# if reflective boundaries selected, must set
+# parity of all vars (in order given by MultigridUserVariables.hpp)
+# 0 = even
+# 1,2,3 = odd x, y, z
+# 4,5,6 = odd xy, yz, xz
+vars_parity = 0             #psi
+              0 4 6 0 5 0   #Aij
+              0             #phi
+
+
+# Q: "Simple, change the gravitational constant of the Universe"
+G_Newton = 1.0
+
+# Boson Star profile ODE solver params
+abs_error = 1.0e-14 # absolute error tolerance of the 1d ODE solver
+rel_error = 1.0e-14 # relative error tolerance of the 1d ODE solver
+initial_step_size = 0.015625 # initial step size for the 1d ODE solver
+max_radius = 128. # max radius the 1d ODE solver attempts to integrate out to. It should be set larger than it will actually be able to achieve.
+binary_search_tol = 5e-16 # precision to which the central value of 0.5 * log(g_tt) is found
