@@ -120,7 +120,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
         }
 
         Vector<IntVectSet> tagVect(topLevel + 1);
-        int tags_grow = 2;
+        int tags_grow = a_params.bufferSize;
         set_tag_cells(vectRHS, tagVect, vectDx, vectDomain,
                       a_params.refineThresh, tags_grow, baseLevel,
                       topLevel + 1);

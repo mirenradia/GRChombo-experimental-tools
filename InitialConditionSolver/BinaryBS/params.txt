@@ -33,10 +33,10 @@ phase2 = 0.0
 star_centre2 = -16. 0. 0. # Note this is displacement from the centre of the grid
 
 # thomas superposition method
-thomas_superposition = 1
+thomas_superposition = 0
 
 # rescale radii of the individual boson stars to make the superposition better
-rescale_radii = 0
+rescale_radii = 1
 
 # Potential params
 scalar_mass = 1.0
