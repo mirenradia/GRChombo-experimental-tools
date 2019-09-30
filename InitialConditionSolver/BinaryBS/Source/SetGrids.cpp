@@ -165,6 +165,16 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
         }
     }
 
+    pout() << "\n----------------------------------------------\n"
+           << "\x1b[1mLoad Balancing information:\x1b[0m\n";
+    // Get number of boxes on this rank and level and print it
+    for (int ilev = 0; ilev < numlevels; ++ilev)
+    {
+        int nbox = vectGrids[ilev].dataIterator().size();
+        pout() << "Number of boxes on level " << ilev << " on this rank: "
+               << nbox << "\n";
+    }
+    pout() << "----------------------------------------------\n" << std::endl;
     return 0;
 }
 
