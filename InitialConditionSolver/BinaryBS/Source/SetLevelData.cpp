@@ -21,15 +21,6 @@
 
 // Set various LevelData functions across the grid
 
-// This takes an IntVect and writes the physical coordinates to a RealVect
-void get_loc(RealVect &a_out_loc, const IntVect &a_iv,
-             const RealVect &a_dx, const PoissonParameters &a_params)
-{
-    a_out_loc = a_iv + 0.5 * RealVect::Unit;
-    a_out_loc *= a_dx;
-    a_out_loc -= a_params.domainLength / 2.0;
-}
-
 // set initial guess value for the conformal factor psi
 // defined by \gamma_ij = \psi^4 \tilde \gamma_ij and complex scalar field phi
 // This has been/will be modified to take the superposition of two boson stars
@@ -284,6 +275,8 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             condition_box(iv, 0) = 12.0 * M_PI * a_params.G_Newton *
                              (pow(psi_0, 5.0) * (mod_Pi_sq + V_of_mod_phi_sq) +
                               psi_0 * grad_phi_sq);
+
+
 
         }
     }

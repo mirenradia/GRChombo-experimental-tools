@@ -41,7 +41,7 @@ extern void set_domains_and_dx(Vector<ProblemDomain> &vectDomain,
 extern void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
                           Vector<IntVectSet> &tagVect, Vector<Real> &vectDx,
                           Vector<ProblemDomain> &vectDomain,
-                          const Real refine_thresh, const int tags_grow,
-                          const int baseLevel, int numLevels);
+                          const int baseLevel, int numLevels,
+                          const PoissonParameters &a_params);
 
 #endif

@@ -65,6 +65,9 @@ class PoissonParameters
     Real chi_subtraction_constant = 1.0;
     Real star_distance;
     Potential::params_t potential_params;
+    int extraction_level; // will ensure this level contains the extraction
+                         // radius and a 20% buffer zone
+    Real extraction_radius;
 };
 
 /// get stuff from input file

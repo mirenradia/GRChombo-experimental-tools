@@ -27,10 +27,17 @@ using std::cerr;
 // various functions operating on grids to set up data for initial
 // conditions, spatially dependent coefficients and rhs etc
 
-inline void get_loc(RealVect &a_out_loc,
-                    const IntVect &a_iv,
-                    const RealVect &a_dx,
-                    const PoissonParameters &a_params);
+// This takes an IntVect and writes the physical coordinates to a RealVect
+extern inline void get_loc(RealVect &a_out_loc,
+                           const IntVect &a_iv,
+                           const RealVect &a_dx,
+                           const PoissonParameters &a_params)
+{
+    a_out_loc = a_iv + 0.5 * RealVect::Unit;
+    a_out_loc *= a_dx;
+    a_out_loc -= a_params.domainLength / 2.0;
+}
+
 
 extern void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                                    LevelData<FArrayBox> &a_dpsi,

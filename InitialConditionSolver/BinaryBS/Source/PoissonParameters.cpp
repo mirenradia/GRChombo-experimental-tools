@@ -315,4 +315,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "\nPotential parameters:\n"
            << "scalar_mass = " << a_params.potential_params.scalar_mass << "\n"
            << "phi^4_coeff = " << a_params.potential_params.phi4_coeff << endl;
+
+    pp.load("extraction_level", a_params.extraction_level, 0);
+    pp.load("extraction_radius", a_params.extraction_radius, 0.1);
 }

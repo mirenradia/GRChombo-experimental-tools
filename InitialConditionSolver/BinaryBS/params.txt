@@ -13,6 +13,9 @@ N = 32 32 32
 max_level    = 3
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.1
+# Can guarantee refinement using extraction parameters below
+extraction_level = 0
+extraction_radius = 0.1
 #min box size
 block_factor = 8
 #max box size
