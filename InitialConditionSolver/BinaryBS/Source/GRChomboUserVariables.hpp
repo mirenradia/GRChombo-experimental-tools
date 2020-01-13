@@ -51,7 +51,6 @@ enum
     c_mod_phi, // modulus of the scalar field
 
     c_Madm,
-    c_Jadm,
 
     c_N, // Noether Charge integrand
 
@@ -92,7 +91,7 @@ static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
 
     "mod_phi",
 
-    "Madm",   "Jadm",
+    "Madm",
 
     "N",
 
