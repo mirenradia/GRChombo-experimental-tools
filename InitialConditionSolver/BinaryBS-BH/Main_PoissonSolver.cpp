@@ -40,70 +40,29 @@ static void enableFpExceptions();
 
 using std::cerr;
 
-void compute_boson_star_profiles(BosonStar &a_boson_star1,
-                                 BosonStar &a_boson_star2,
-                                 PoissonParameters &a_params)
+void compute_boson_star_profile(BosonStar &a_boson_star,
+                                PoissonParameters &a_params)
 {
     if (a_params.verbosity)
     {
-        pout() << "compute_boson_star_profiles: Computing boson star 1 profile"
+        pout() << "compute_boson_star_profile: Computing boson star profile"
                << std::endl;
     }
-    a_boson_star1.compute_1d_solution(3.5 * a_params.domainLength[0]);
+    a_boson_star.compute_1d_solution(3.5 * a_params.domainLength[0]);
 
-    // only need to compute profile for 2nd star if different from first
-    if (!a_params.identical)
-    {
-        if(a_params.verbosity)
-        {
-            pout() << "compute_boson_star_profiles:"
-                      " Computing boson star 2 profile" << std::endl;
-        }
-        a_boson_star2.compute_1d_solution(3.5 * a_params.domainLength[0]);
-    }
-    else
-    {
-        if (a_params.verbosity)
-        {
-            pout() << "\ncompute_boson_star_profiles: Boson star 2 identical"
-                      " to star 1; skipping profile computation" << std::endl;
-        }
-        // Copy boson_star1 into boson_star2 keeping phase and centre
-        auto boson_star2_centre = a_boson_star2.m_params_BosonStar.star_centre;
-        double boson_star2_phase = a_boson_star2.m_params_BosonStar.phase;
-        a_boson_star2 = a_boson_star1;
-        a_boson_star2.m_params_BosonStar.star_centre = boson_star2_centre;
-        a_boson_star2.m_params_BosonStar.phase = boson_star2_phase;
-    }
-
-    if (a_params.rescale_radii)
-    {
-        a_params.chi_subtraction_constant = a_boson_star1.m_1d_sol.
-            get_chi_subtraction_constant_with(a_boson_star2.m_1d_sol,
-            a_params.star_distance);
-
-        Real target_chi = 1.0 / a_params.chi_subtraction_constant;
-
-        a_boson_star1.m_1d_sol.rescale_isotropic_radius(a_params.star_distance,
-            target_chi);
-        a_boson_star2.m_1d_sol.rescale_isotropic_radius(a_params.star_distance,
-            target_chi);
-
-        pout() << "\nUsing rescaling method:\n";
-        pout() << "Chi subtraction constant = "
-               << a_params.chi_subtraction_constant << "\n" << std::endl;
-    }
+    /*
     if (a_params.thomas_superposition)
     {
-        // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_constant
+        // 1/chi = 1/chi_bs + 1/chi_bh - chi_subtraction_constant
         // so chi ~ 1/(2 - chi_subtraction_constant) at spatial infinity
         a_params.chi_subtraction_constant =
-            1. / a_boson_star1.m_1d_sol.m_chi(a_params.star_distance);
+            1. / a_boson_star.m_1d_sol.m_chi(a_params.binary_separation);
         Real chi_asymptotic = 1. / (2. - a_params.chi_subtraction_constant);
         pout() << "\nUsing Thomas superposition method:\n";
         pout() << "Asymptotic value of chi = " << std::setprecision(16)
                << chi_asymptotic << "\n" << std::endl;
     }
+    */
 }
 
 // Sets up and runs the solver
@@ -114,8 +73,7 @@ void compute_boson_star_profiles(BosonStar &a_boson_star1,
 // calculate the rhs, Pi = dphidt = 0.
 int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                  const PoissonParameters &a_params,
-                 BosonStar &a_boson_star1,
-                 BosonStar &a_boson_star2)
+                 BosonStar &a_boson_star)
 {
 
     // the params reader
@@ -169,7 +127,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // and values for other multigrid sources - phi and Aij
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                grchombo_boundaries, vectDx[ilev], a_params,
-                               a_boson_star1, a_boson_star2);
+                               a_boson_star);
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -367,20 +325,17 @@ int main(int argc, char *argv[])
         getPoissonParameters(params);
 
         // calculate boson star 1d profiles
-        BosonStar boson_star1(params.boson_star1_params,
+        BosonStar boson_star(params.boson_star_params,
                               params.potential_params, params.G_Newton,
                               params.verbosity);
-        BosonStar boson_star2(params.boson_star2_params,
-                              params.potential_params, params.G_Newton,
-                              params.verbosity);
-        compute_boson_star_profiles(boson_star1, boson_star2, params);
+        compute_boson_star_profile(boson_star, params);
 
         // set up the grids, using the rhs for tagging to decide
         // where needs additional levels
-        set_grids(grids, params, boson_star1, boson_star2);
+        set_grids(grids, params, boson_star);
 
         // Solve the equations!
-        status = poissonSolve(grids, params, boson_star1, boson_star2);
+        status = poissonSolve(grids, params, boson_star);
 
     } // End scoping trick
 

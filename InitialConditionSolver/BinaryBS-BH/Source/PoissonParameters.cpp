@@ -207,107 +207,57 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.load("G_Newton", a_params.G_Newton);
 
     // Common Boson Star parameters
-    pp.load("abs_error", a_params.boson_star1_params.abs_error, 1.0e-14);
-    pp.load("rel_error", a_params.boson_star1_params.rel_error, 1.0e-14);
-    pp.load("initial_step_size", a_params.boson_star1_params.initial_step_size,
+    pp.load("abs_error", a_params.boson_star_params.abs_error, 1.0e-14);
+    pp.load("rel_error", a_params.boson_star_params.rel_error, 1.0e-14);
+    pp.load("initial_step_size", a_params.boson_star_params.initial_step_size,
             0.015625);
-    pp.load("max_radius", a_params.boson_star1_params.max_radius, 256.);
-    pp.load("binary_search_tol", a_params.boson_star1_params.binary_search_tol,
+    pp.load("max_radius", a_params.boson_star_params.max_radius, 256.);
+    pp.load("binary_search_tol", a_params.boson_star_params.binary_search_tol,
             1.0e-15);
     pp.load("max_binary_search_iter",
-            a_params.boson_star1_params.max_binary_search_iter, 1000);
+            a_params.boson_star_params.max_binary_search_iter, 1000);
 
     if (a_params.verbosity)
     {
         pout() << "\nBoson Star Profile Solver Parameters:\n"
                << "abs_error = "
-                    << a_params.boson_star1_params.abs_error << "\n"
+                    << a_params.boson_star_params.abs_error << "\n"
                << "rel_error = "
-                    << a_params.boson_star1_params.rel_error << "\n"
+                    << a_params.boson_star_params.rel_error << "\n"
                << "initial_step_size = "
-                    << a_params.boson_star1_params.initial_step_size << "\n"
+                    << a_params.boson_star_params.initial_step_size << "\n"
                << "max_radius = "
-                    << a_params.boson_star1_params.max_radius << "\n"
+                    << a_params.boson_star_params.max_radius << "\n"
                << "binary_search_tol = "
-                    << a_params.boson_star1_params.binary_search_tol << "\n"
+                    << a_params.boson_star_params.binary_search_tol << "\n"
                << "max_binary_search_iter = "
-                    << a_params.boson_star1_params.max_binary_search_iter
+                    << a_params.boson_star_params.max_binary_search_iter
                << endl;
     }
 
-    // Boson Star 1 parameters
-    pp.load("central_amplitude_CSF1",
-            a_params.boson_star1_params.central_amplitude_CSF);
-    pp.load("phase1", a_params.boson_star1_params.phase, 0.0);
-    pp.load("star_centre1", a_params.boson_star1_params.star_centre);
+    // Boson Star parameters
+    pp.load("central_amplitude_CSF",
+            a_params.boson_star_params.central_amplitude_CSF);
+    pp.load("phase", a_params.boson_star_params.phase, 0.0);
+    pp.load("star_centre", a_params.boson_star_params.star_centre);
 
-    pout() << "\nBoson Star 1 parameters:\n"
+    pout() << "\nBoson Star parameters:\n"
            << "central_amplitude = "
-                << a_params.boson_star1_params.central_amplitude_CSF << "\n"
-           << "phase = " << a_params.boson_star1_params.phase << "\n"
-           << "centre = (" << a_params.boson_star1_params.star_centre[0] << ", "
-                           << a_params.boson_star1_params.star_centre[1] << ", "
-                           << a_params.boson_star1_params.star_centre[2] << ")"
+                << a_params.boson_star_params.central_amplitude_CSF << "\n"
+           << "phase = " << a_params.boson_star_params.phase << "\n"
+           << "centre = (" << a_params.boson_star_params.star_centre[0] << ", "
+                           << a_params.boson_star_params.star_centre[1] << ", "
+                           << a_params.boson_star_params.star_centre[2] << ")"
            << endl;
 
-
-    // Initialize values for boson_star2_params to same as boson_star1_params
-    // and then assign that ones that should differ below
-    a_params.boson_star2_params = a_params.boson_star1_params;
-
-    // Are the two stars' profiles identical
-    pp.load("identical", a_params.identical, false);
-
-    // Do we subtract a non-unit multiple of the Minkowski 3-metric in
-    // superposition in order to reduce radial excitation
-    // Note this only works in the case identical=true
-    if (a_params.identical)
-    {
-        pp.load("thomas_superposition", a_params.thomas_superposition, false);
-    }
-    else a_params.thomas_superposition = false;
-
-    // Instead try rescaling the individual stars' isotropic radii in order to
-    // reduce radial excitation.
-    if (!a_params.thomas_superposition)
-    {
-        pp.load("rescale_radii", a_params.rescale_radii, false);
-    }
-    else a_params.rescale_radii = false;
-
-    // Boson Star 2 parameters
-    if (!a_params.identical)
-    {
-        pp.load("central_amplitude_CSF2",
-                a_params.boson_star2_params.central_amplitude_CSF);
-    }
-    pp.load("phase2", a_params.boson_star2_params.phase, 0.0);
-    pp.load("star_centre2", a_params.boson_star2_params.star_centre,
-            {a_params.domainLength[0]
-                - a_params.boson_star1_params.star_centre[0],
-             a_params.domainLength[1]
-                - a_params.boson_star1_params.star_centre[1],
-             a_params.domainLength[2]
-                - a_params.boson_star1_params.star_centre[2]});
-
-    pout() << "\nBoson Star 2 parameters:\n"
-           << "central_amplitude = "
-                << a_params.boson_star2_params.central_amplitude_CSF << "\n"
-           << "phase = " << a_params.boson_star2_params.phase << "\n"
-           << "centre = (" << a_params.boson_star2_params.star_centre[0] << ", "
-                           << a_params.boson_star2_params.star_centre[1] << ", "
-                           << a_params.boson_star2_params.star_centre[2] << ")"
-           << endl;
-
-
-    RealVect star_displacement;
+    RealVect binary_displacement;
     for(int idir = 0; idir < SpaceDim; idir++)
     {
-        star_displacement[idir] = a_params.boson_star1_params.star_centre[idir]
-                                - a_params.boson_star2_params.star_centre[idir];
+        binary_displacement[idir] = a_params.boson_star_params.star_centre[idir];
     }
-    a_params.star_distance = star_displacement.vectorLength();
+    a_params.binary_separation = binary_displacement.vectorLength();
 
+    pp.load("rescale_radii", a_params.rescale_radii, false);
     // Potential params
     pp.load("scalar_mass", a_params.potential_params.scalar_mass, 1.0);
     pp.load("phi4_coeff", a_params.potential_params.phi4_coeff, 0.0);
@@ -315,4 +265,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "\nPotential parameters:\n"
            << "scalar_mass = " << a_params.potential_params.scalar_mass << "\n"
            << "phi^4_coeff = " << a_params.potential_params.phi4_coeff << endl;
+
+    pp.load("extraction_level", a_params.extraction_level, 0);
+    pp.load("extraction_radius", a_params.extraction_radius, 0.1);
 }

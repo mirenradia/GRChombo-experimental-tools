@@ -29,8 +29,7 @@
 // for the refinement
 int set_grids(Vector<DisjointBoxLayout> &vectGrids,
                      PoissonParameters &a_params,
-                     BosonStar &a_boson_star1,
-                     BosonStar &a_boson_star2)
+                     BosonStar &a_boson_star)
 {
     Vector<ProblemDomain> vectDomain;
     Vector<Real> vectDx;
@@ -100,7 +99,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
 
             set_initial_conditions(*temp_multigrid_vars, *temp_dpsi,
                                    grchombo_boundaries, dxLevel, a_params,
-                                   a_boson_star1, a_boson_star2);
+                                   a_boson_star);
 
             // set condition for regrid - use the integrability condition
             // integral
@@ -120,10 +119,9 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
         }
 
         Vector<IntVectSet> tagVect(topLevel + 1);
-        int tags_grow = 2;
-        set_tag_cells(vectRHS, tagVect, vectDx, vectDomain,
-                      a_params.refineThresh, tags_grow, baseLevel,
-                      topLevel + 1);
+        int tags_grow = a_params.bufferSize;
+        set_tag_cells(vectRHS, tagVect, vectDx, vectDomain, baseLevel,
+                      topLevel + 1, a_params);
 
         int new_finest =
             meshrefine.regrid(newBoxes, tagVect, baseLevel, topLevel, oldBoxes);
@@ -165,6 +163,16 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
         }
     }
 
+    pout() << "\n----------------------------------------------\n"
+           << "\x1b[1mLoad Balancing information:\x1b[0m\n";
+    // Get number of boxes on this rank and level and print it
+    for (int ilev = 0; ilev < numlevels; ++ilev)
+    {
+        int nbox = vectGrids[ilev].dataIterator().size();
+        pout() << "Number of boxes on level " << ilev << " on this rank: "
+               << nbox << "\n";
+    }
+    pout() << "----------------------------------------------\n" << std::endl;
     return 0;
 }
 
@@ -194,8 +202,8 @@ void set_domains_and_dx(Vector<ProblemDomain> &vectDomain, Vector<Real> &vectDx,
 */
 void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
                    Vector<IntVectSet> &tagVect, Vector<Real> &vectDx,
-                   Vector<ProblemDomain> &vectDomain, const Real refine_thresh,
-                   const int tags_grow, const int baseLevel, int numLevels)
+                   Vector<ProblemDomain> &vectDomain, const int baseLevel,
+                   int numLevels, const PoissonParameters &a_params)
 {
     for (int lev = baseLevel; lev != numLevels; lev++)
     {
@@ -208,7 +216,7 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
 
         maxRHS = norm(levelRhs, levelRhs.interval(), 0);
 
-        Real tagVal = maxRHS * refine_thresh;
+        Real tagVal = maxRHS * a_params.refineThresh;
 
         // now loop through grids and tag cells where RHS > tagVal
         for (dit.reset(); dit.ok(); ++dit)
@@ -219,12 +227,21 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
             for (bit.begin(); bit.ok(); ++bit)
             {
                 const IntVect &iv = bit();
-                if (abs(thisRhs(iv)) >= tagVal)
+                bool extraction_tag = false;
+                if (lev < a_params.extraction_level)
+                {
+                    RealVect loc;
+                    RealVect dx_vect = vectDx[lev] * RealVect::Unit;
+                    get_loc(loc, iv, dx_vect, a_params);
+                    Real r = loc.vectorLength();
+                    extraction_tag = (r < 1.2 * a_params.extraction_radius);
+                }
+                if (abs(thisRhs(iv)) >= tagVal || extraction_tag)
                     local_tags |= iv;
             }
         } // end loop over grids on this level
 
-        local_tags.grow(tags_grow);
+        local_tags.grow(a_params.bufferSize);
         const Box &domainBox = vectDomain[lev].domainBox();
         local_tags &= domainBox;
 

@@ -13,6 +13,9 @@ N = 32 32 32
 max_level    = 3
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.1
+# Can guarantee refinement using extraction parameters below
+extraction_level = 0
+extraction_radius = 0.1
 #min box size
 block_factor = 8
 #max box size
@@ -22,18 +25,9 @@ fill_ratio   = 0.5
 buffer_size  = 3
 
 # Boson Star 1 profile and centre
-central_amplitude_CSF1 = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
-phase1 = 0.0
-star_centre1 = 16. 0. 0. # Note this is displacement from the centre of the grid
-
-# Boson Star 2 profile and centre
-identical = 1 # If 1, then central_amplitude_CSF2 is ignored and set to central_amplitude_CSF1
-central_amplitude_CSF2 = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
-phase2 = 0.0
-star_centre2 = -16. 0. 0. # Note this is displacement from the centre of the grid
-
-# thomas superposition method
-thomas_superposition = 0
+central_amplitude_CSF = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
+phase = 0.0
+star_centre = 16. 0. 0. # Note this is displacement from the centre of the grid
 
 # rescale radii of the individual boson stars to make the superposition better
 rescale_radii = 1

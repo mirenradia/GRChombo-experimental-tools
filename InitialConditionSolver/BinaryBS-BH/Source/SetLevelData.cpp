@@ -21,15 +21,6 @@
 
 // Set various LevelData functions across the grid
 
-// This takes an IntVect and writes the physical coordinates to a RealVect
-void get_loc(RealVect &a_out_loc, const IntVect &a_iv,
-             const RealVect &a_dx, const PoissonParameters &a_params)
-{
-    a_out_loc = a_iv + 0.5 * RealVect::Unit;
-    a_out_loc *= a_dx;
-    a_out_loc -= a_params.domainLength / 2.0;
-}
-
 // set initial guess value for the conformal factor psi
 // defined by \gamma_ij = \psi^4 \tilde \gamma_ij and complex scalar field phi
 // This has been/will be modified to take the superposition of two boson stars
@@ -40,8 +31,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                             GRChomboBCs &a_grchombo_boundaries,
                             const RealVect &a_dx,
                             const PoissonParameters &a_params,
-                            BosonStar &a_boson_star1,
-                            BosonStar &a_boson_star2)
+                            BosonStar &a_boson_star)
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
@@ -56,7 +46,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
         for (bit.begin(); bit.ok(); ++bit)
         {
             set_initial_multigrid_cell(multigrid_vars_box, dpsi_box,
-                bit(), a_dx, a_params, a_boson_star1, a_boson_star2);
+                bit(), a_dx, a_params, a_boson_star);
         }
         // now fill boundary ghost cells if using nonperiodic boundaries in
         // GRChombo. Note that these cells are unused in the
@@ -81,8 +71,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                     for (bbit.begin(); bbit.ok(); ++bbit)
                     {
                         set_initial_multigrid_cell(multigrid_vars_box, dpsi_box,
-                            bbit(), a_dx, a_params, a_boson_star1,
-                            a_boson_star2);
+                            bbit(), a_dx, a_params, a_boson_star);
                     } // end loop through boundary box
                 } // end loop over sides
             } // end if (periodic[idir])
@@ -95,59 +84,41 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
                                 const IntVect &a_iv,
                                 const RealVect &a_dx,
                                 const PoissonParameters &a_params,
-                                BosonStar &a_boson_star1,
-                                BosonStar &a_boson_star2)
+                                BosonStar &a_boson_star)
 {
     RealVect loc;
     get_loc(loc, a_iv, a_dx, a_params);
 
     // work out the displacement from the centre of each star
-    RealVect loc1, loc2;
+    RealVect loc_bs;
     for(int idir = 0; idir < SpaceDim; ++idir)
     {
-        loc1[idir] = loc[idir]
-            - a_params.boson_star1_params.star_centre[idir];
-        loc2[idir] = loc[idir]
-            - a_params.boson_star2_params.star_centre[idir];
+        loc_bs[idir] = loc[idir]
+            - a_params.boson_star_params.star_centre[idir];
     }
-    Real r1, r2;
-    r1 = loc1.vectorLength();
-    r2 = loc2.vectorLength();
+    Real r_bs = loc_bs.vectorLength();
 
     // CCZ4 variables
-    Real chi1 = a_boson_star1.m_1d_sol.m_chi(r1);
-    Real chi2 = a_boson_star2.m_1d_sol.m_chi(r2);
-    Real lapse1 = a_boson_star1.m_1d_sol.m_lapse(r1);
-    Real lapse2 = a_boson_star2.m_1d_sol.m_lapse(r2);
+    Real chi = a_boson_star.m_1d_sol.m_chi(r_bs);
+    Real lapse = a_boson_star.m_1d_sol.m_lapse(r_bs);
 
     // superposed conformal factor
     // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_constant
 
-    Real chi = (chi1 * chi2) / (chi1 + chi2
-            - a_params.chi_subtraction_constant * chi1 * chi2);
-    Real lapse = sqrt(lapse1 * lapse1 + lapse2 * lapse2 - 1.0);
     a_multigrid_vars_box(a_iv, c_psi_0) = pow(chi, -0.25);
     a_multigrid_vars_box(a_iv, c_lapse_0) = lapse;
 
     // Matter superposition
-    Real phase1 = a_params.boson_star1_params.phase;
-    Real phase2 = a_params.boson_star2_params.phase;
-    Real frequency1 = a_boson_star1.m_1d_sol.m_frequency_over_mass
+    Real phase = a_params.boson_star_params.phase;
+    Real frequency = a_boson_star.m_1d_sol.m_frequency_over_mass
                         * a_params.potential_params.scalar_mass;
-    Real frequency2 = a_boson_star2.m_1d_sol.m_frequency_over_mass
-                        * a_params.potential_params.scalar_mass;
-    Real mod_phi1 = a_boson_star1.m_1d_sol.m_phi(r1);
-    Real mod_phi2 = a_boson_star2.m_1d_sol.m_phi(r2);
-    a_multigrid_vars_box(a_iv, c_phi_Re_0) = mod_phi1 * cos(phase1)
-                                         + mod_phi2 * cos(phase2);
-    a_multigrid_vars_box(a_iv, c_phi_Im_0) = mod_phi1 * sin(phase1)
-                                         + mod_phi2 * sin(phase2);
+    Real mod_phi = a_boson_star.m_1d_sol.m_phi(r_bs);
+    a_multigrid_vars_box(a_iv, c_phi_Re_0) = mod_phi * cos(phase);
+    a_multigrid_vars_box(a_iv, c_phi_Im_0) = mod_phi * sin(phase);
     a_multigrid_vars_box(a_iv, c_Pi_Re_0)
-        = frequency1 * mod_phi1 * sin(phase1) / lapse1
-        + frequency2 * mod_phi2 * sin(phase2) / lapse2;
+        = frequency * mod_phi * sin(phase) / lapse;
     a_multigrid_vars_box(a_iv, c_Pi_Im_0)
-        = -frequency1 * mod_phi1 * cos(phase1) / lapse1
-         - frequency2 * mod_phi2 * cos(phase2) / lapse2;
+        = -frequency * mod_phi * cos(phase) / lapse;
 
     // dpsi is initially zero
     a_dpsi_box(a_iv, 0) = 0.0;

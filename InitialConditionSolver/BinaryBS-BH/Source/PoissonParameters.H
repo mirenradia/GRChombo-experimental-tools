@@ -58,13 +58,14 @@ class PoissonParameters
     Real alpha;
     Real beta;
     Real G_Newton;
-    BosonStar_params_t boson_star1_params, boson_star2_params;
-    bool identical; // whether or not the 2 boson stars have the same profile
-    bool thomas_superposition;
+    BosonStar_params_t boson_star_params;
     bool rescale_radii;
     Real chi_subtraction_constant = 1.0;
-    Real star_distance;
+    Real binary_separation;
     Potential::params_t potential_params;
+    int extraction_level; // will ensure this level contains the extraction
+                         // radius and a 20% buffer zone
+    Real extraction_radius;
 };
 
 /// get stuff from input file

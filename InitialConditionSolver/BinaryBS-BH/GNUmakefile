@@ -6,7 +6,7 @@ ifndef CHOMBO_HOME
 endif
 
 # GRChombo Source directory
-GRCHOMBO_SOURCE = ../../GRChombo/Source
+GRCHOMBO_SOURCE = ../../../GRChombo/Source
 
 # trace the chain of included makefiles
 makefiles += releasedExamples_AMRPoisson_execVariableCoefficient
