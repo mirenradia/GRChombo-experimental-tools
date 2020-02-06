@@ -55,12 +55,16 @@ class PoissonParameters
     GRChomboBCs::params_t grchombo_boundary_params;
     bool symmetric_boundaries_exist;
     bool nonperiodic_boundaries_exist;
+    Real pre_collapsed_lapse_exponent;
     Real alpha;
     Real beta;
     Real G_Newton;
+    Real bh_bare_mass;
+    RealVect bh_spin;
+    RealVect bh_momentum;
+    RealVect bh_offset;
     BosonStar_params_t boson_star_params;
-    bool rescale_radii;
-    Real chi_subtraction_constant = 1.0;
+    bool rescale_radius;
     Real binary_separation;
     Potential::params_t potential_params;
     int extraction_level; // will ensure this level contains the extraction

@@ -191,7 +191,17 @@ void getPoissonParameters(PoissonParameters &a_params)
             a_params.grchombo_boundary_params);
     }
 
+    // get the power of the final psi to set as the final lapse
+    // probably want this to be <= -2
+    pp.load("pre_collapsed_lapse_exponent",
+            a_params.pre_collapsed_lapse_exponent, -2.0);
 
+    if (a_params.pre_collapsed_lapse_exponent > -2.0)
+    {
+        pout() << "Warning: lapse set to psi^"
+               << a_params.pre_collapsed_lapse_exponent
+               << ". This is not precollapsed" << endl;
+    }
     // problem specific params
     //pp.get("alpha", a_params.alpha);
     //pp.get("beta", a_params.beta);
@@ -203,7 +213,20 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "alpha, beta = " << a_params.alpha << ", " << a_params.beta
            << endl;
 
-    // Initial conditions for the scalar field
+    // black hole parameters
+    pp.load("bh_bare_mass", a_params.bh_bare_mass);
+    std::array<Real, SpaceDim> bh_spin, bh_momentum, bh_offset;
+    pp.load("bh_spin", bh_spin, {0.0});
+    pp.load("bh_momentum", bh_momentum, {0.0});
+    pp.load("bh_offset", bh_offset);
+    for (int idir = 0; idir < SpaceDim; ++idir)
+    {
+        a_params.bh_spin[idir] = bh_spin[idir];
+        a_params.bh_momentum[idir] = bh_momentum[idir];
+        a_params.bh_offset[idir] = bh_offset[idir];
+    }
+
+    // Matter parameters below
     pp.load("G_Newton", a_params.G_Newton);
 
     // Common Boson Star parameters
@@ -253,11 +276,12 @@ void getPoissonParameters(PoissonParameters &a_params)
     RealVect binary_displacement;
     for(int idir = 0; idir < SpaceDim; idir++)
     {
-        binary_displacement[idir] = a_params.boson_star_params.star_centre[idir];
+        binary_displacement[idir] = a_params.bh_offset[idir]
+            - a_params.boson_star_params.star_centre[idir];
     }
     a_params.binary_separation = binary_displacement.vectorLength();
 
-    pp.load("rescale_radii", a_params.rescale_radii, false);
+    pp.load("rescale_radius", a_params.rescale_radius, false);
     // Potential params
     pp.load("scalar_mass", a_params.potential_params.scalar_mass, 1.0);
     pp.load("phi4_coeff", a_params.potential_params.phi4_coeff, 0.0);

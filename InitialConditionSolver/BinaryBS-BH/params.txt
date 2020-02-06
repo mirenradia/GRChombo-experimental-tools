@@ -24,13 +24,23 @@ max_grid_size = 16
 fill_ratio   = 0.5
 buffer_size  = 3
 
-# Boson Star 1 profile and centre
+# the power of psi to set the lapse to
+# should probably be <= -2
+pre_collapsed_lapse_exponent = -2.0
+
+# Black Hole params
+bh_bare_mass = 0.5
+bh_spin = 0.0 0.0 0.0
+bh_momentum = 0.0 0.0 0.0
+bh_offset = -16.0 0.0 0.0
+
+# Boson Star profile and centre
 central_amplitude_CSF = 0.1 # Note this is divided by sqrt(4 pi G_Newton) - may be changed in future
 phase = 0.0
 star_centre = 16. 0. 0. # Note this is displacement from the centre of the grid
 
-# rescale radii of the individual boson stars to make the superposition better
-rescale_radii = 1
+# rescale radius of the boson star to make the superposition better
+rescale_radius = 0
 
 # Potential params
 scalar_mass = 1.0

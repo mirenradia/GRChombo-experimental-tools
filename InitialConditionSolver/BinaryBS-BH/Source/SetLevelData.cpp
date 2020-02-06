@@ -19,6 +19,9 @@
 #include "parstream.H"
 #include <cmath>
 
+// Black Hole Includes
+#include "SetBlackHole.H"
+
 // Set various LevelData functions across the grid
 
 // set initial guess value for the conformal factor psi
@@ -97,16 +100,23 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
             - a_params.boson_star_params.star_centre[idir];
     }
     Real r_bs = loc_bs.vectorLength();
+    RealVect r_bh = get_bh_displacement(loc, a_params);
 
-    // CCZ4 variables
     Real chi = a_boson_star.m_1d_sol.m_chi(r_bs);
     Real lapse = a_boson_star.m_1d_sol.m_lapse(r_bs);
 
-    // superposed conformal factor
-    // 1/chi = 1/chi1 + 1/chi2 - chi_subtraction_constant
+    // geometry variables
+    a_multigrid_vars_box(a_iv, c_psi_reg) = pow(chi, -0.25);
+    if (a_params.rescale_radius)
+    {
+        a_multigrid_vars_box(a_iv, c_psi_reg) -= 0.5 * a_params.bh_bare_mass
+                                                 / a_params.binary_separation;
+    }
+    set_black_hole_Aij(a_multigrid_vars_box, a_iv, loc, a_params);
 
-    a_multigrid_vars_box(a_iv, c_psi_0) = pow(chi, -0.25);
-    a_multigrid_vars_box(a_iv, c_lapse_0) = lapse;
+    // not sure we need the lapse from the boson star solution if we're just
+    // using a pre-collapsed lapse
+    //a_multigrid_vars_box(a_iv, c_lapse_0) = lapse;
 
     // Matter superposition
     Real phase = a_params.boson_star_params.phase;
@@ -123,6 +133,20 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
     // dpsi is initially zero
     a_dpsi_box(a_iv, 0) = 0.0;
 } //end set set_initial_multigrid_cell
+
+// returns A_{ij}A^{ij}
+Real get_AijAij(const FArrayBox &a_multigrid_vars_box, const IntVect &a_iv)
+{
+    const Real& A11 = a_multigrid_vars_box(a_iv, c_A11_0);
+    const Real& A22 = a_multigrid_vars_box(a_iv, c_A22_0);
+    const Real& A33 = a_multigrid_vars_box(a_iv, c_A33_0);
+    const Real& A12 = a_multigrid_vars_box(a_iv, c_A12_0);
+    const Real& A13 = a_multigrid_vars_box(a_iv, c_A13_0);
+    const Real& A23 = a_multigrid_vars_box(a_iv, c_A23_0);
+
+    return (A11 * A11 + A22 * A22 + A33 * A33
+            + 2.0 * (A12 * A12 + A13 * A13 + A23 * A23));
+}
 
 // set the rhs source for the poisson eqn
 void set_rhs(LevelData<FArrayBox> &a_rhs,
@@ -144,9 +168,12 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
         for (bit.begin(); bit.ok(); ++bit)
         {
             IntVect iv = bit();
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
-            // rhs = -laplacian of psi_0 - pi G psi_0^5 (|Pi|^2
-            //       + psi_0^{-4} grad_phi_sq + V(|phi|^2))
+            // rhs = -laplacian of psi_0 - 1/8 psi_0^{-7}A_{ij}A^{ij}
+            //       - pi G psi_0^5 (|Pi|^2 + psi_0^{-4} grad_phi_sq
+            //       + V(|phi|^2))
             Real laplacian_of_psi_0, grad_phi_sq, V_of_mod_phi_sq;
             set_laplacian_psi(laplacian_of_psi_0, iv, multigrid_vars_box, a_dx);
             set_grad_phi_sq(grad_phi_sq, iv, multigrid_vars_box, a_dx);
@@ -157,16 +184,22 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             Real Pi_Re = multigrid_vars_box(iv, c_Pi_Re_0);
             Real Pi_Im = multigrid_vars_box(iv, c_Pi_Im_0);
             Real mod_Pi_sq = Pi_Re * Pi_Re + Pi_Im * Pi_Im;
-            Real psi_0 = multigrid_vars_box(iv, c_psi_0);
+            Real AijAij = get_AijAij(multigrid_vars_box, iv);
+            Real psi_bl = get_psi_bl(loc, a_params);
+            Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bl;
 
-            rhs_box(iv, 0) = -laplacian_of_psi_0 - M_PI * a_params.G_Newton *
-                             (pow(psi_0, 5.0) * (mod_Pi_sq + V_of_mod_phi_sq) +
+            rhs_box(iv, 0) = - laplacian_of_psi_0
+                             - 0.125 * pow(psi_0, -7.0) * AijAij
+                             - M_PI * a_params.G_Newton * (pow(psi_0, 5.0) *
+                             (mod_Pi_sq + V_of_mod_phi_sq) +
                               psi_0 * grad_phi_sq);
         }
     }
 } // end set_rhs
 
 // computes the Laplacian of psi at a point in a box
+// note that the only the laplacian of the regular part is calculated as the
+// laplacian of the singular Brill-Lindquist part vanishes.
 inline void set_laplacian_psi(Real &laplacian_of_psi_0,
                               const IntVect &a_iv,
                               const FArrayBox &a_multigrid_vars_box,
@@ -182,9 +215,9 @@ inline void set_laplacian_psi(Real &laplacian_of_psi_0,
 
         // 2nd order stencil for now
         Real d2psi_dxdx = 1.0 / (a_dx[idir] * a_dx[idir]) *
-                          (+1.0 * a_multigrid_vars_box(iv_offset2, c_psi_0)
-                           -2.0 * a_multigrid_vars_box(a_iv, c_psi_0)
-                           +1.0 * a_multigrid_vars_box(iv_offset1, c_psi_0));
+                          (+1.0 * a_multigrid_vars_box(iv_offset2, c_psi_reg)
+                           -2.0 * a_multigrid_vars_box(a_iv, c_psi_reg)
+                           +1.0 * a_multigrid_vars_box(iv_offset1, c_psi_reg));
         laplacian_of_psi_0 += d2psi_dxdx;
     }
 } // end set_laplacian_psi
@@ -239,6 +272,8 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
         for (bit.begin(); bit.ok(); ++bit)
         {
             IntVect iv = bit();
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
             Real grad_phi_sq, V_of_mod_phi_sq;
             set_grad_phi_sq(grad_phi_sq, iv, multigrid_vars_box, a_dx);
@@ -249,12 +284,17 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             Real Pi_Re = multigrid_vars_box(iv, c_Pi_Re_0);
             Real Pi_Im = multigrid_vars_box(iv, c_Pi_Im_0);
             Real mod_Pi_sq = Pi_Re * Pi_Re + Pi_Im * Pi_Im;
-            Real psi_0 = multigrid_vars_box(iv, c_psi_0);
+            Real AijAij = get_AijAij(multigrid_vars_box, iv);
+            Real psi_bl = get_psi_bl(loc, a_params);
+            Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bl;
 
             // the condition is similar to the 12*rhs but without the laplacian
-            condition_box(iv, 0) = 12.0 * M_PI * a_params.G_Newton *
-                             (pow(psi_0, 5.0) * (mod_Pi_sq + V_of_mod_phi_sq) +
-                              psi_0 * grad_phi_sq);
+            // add with an extra log(psi_0) to refine around the puncture
+            condition_box(iv, 0) = 1.5 * pow(psi_0, -7.0) * AijAij +
+                                   12.0 * M_PI * a_params.G_Newton *
+                                   (pow(psi_0, 5.0) * (mod_Pi_sq
+                                   + V_of_mod_phi_sq) + psi_0 * grad_phi_sq)
+                                   + log(psi_0);
 
         }
     }
@@ -280,7 +320,7 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
         for (bit.begin(); bit.ok(); ++bit)
         {
             IntVect iv = bit();
-            multigrid_vars_box(iv, c_psi_0) += dpsi_box(iv, 0);
+            multigrid_vars_box(iv, c_psi_reg) += dpsi_box(iv, 0);
         }
     }
 }
@@ -303,6 +343,8 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
         for (bit.begin(); bit.ok(); ++bit)
         {
             IntVect iv = bit();
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
             Real grad_phi_sq, V_of_mod_phi_sq;
             set_grad_phi_sq(grad_phi_sq, iv, multigrid_vars_box, a_dx);
@@ -314,11 +356,14 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
             Real Pi_Re = multigrid_vars_box(iv, c_Pi_Re_0);
             Real Pi_Im = multigrid_vars_box(iv, c_Pi_Im_0);
             Real mod_Pi_sq = Pi_Re * Pi_Re + Pi_Im * Pi_Im;
-            Real psi_0 = multigrid_vars_box(iv, c_psi_0);
+            Real AijAij = get_AijAij(multigrid_vars_box, iv);
+            Real psi_bl = get_psi_bl(loc, a_params);
+            Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bl;
 
             aCoef_box(iv, 0) = M_PI * a_params.G_Newton *
                                (5 * pow(psi_0, 4.0) * (mod_Pi_sq
-                                + V_of_mod_phi_sq) + grad_phi_sq);
+                                + V_of_mod_phi_sq) + grad_phi_sq)
+                               - 0.875 * pow(psi_0, -8.0) * AijAij;
         }
     }
 }
@@ -374,7 +419,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
         for (bit.begin(); bit.ok(); ++bit)
         {
             set_non_const_output_cell(multigrid_vars_box,
-                grchombo_vars_box, bit());
+                grchombo_vars_box, bit(), a_dx, a_params);
         }
 
         // finally non-constant boundary ghosts
@@ -400,7 +445,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
                     for (bbit.begin(); bbit.ok(); ++bbit)
                     {
                         set_non_const_output_cell(multigrid_vars_box,
-                            grchombo_vars_box, bbit());
+                            grchombo_vars_box, bbit(), a_dx, a_params);
                     } // end loop through boundary box
                 } // end loop over sides
             } // end if (periodic[idir])
@@ -410,14 +455,36 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
 void set_non_const_output_cell(const FArrayBox &a_multigrid_vars_box,
                                FArrayBox &a_grchombo_vars_box,
-                               const IntVect &a_iv)
+                               const IntVect &a_iv,
+                               const RealVect &a_dx,
+                               const PoissonParameters &a_params)
 {
+    RealVect loc;
+    get_loc(loc, a_iv, a_dx, a_params);
+
     // GRChombo conformal factor chi = psi^-4
-    Real chi = pow(a_multigrid_vars_box(a_iv, c_psi_0), -4.0);
-    a_grchombo_vars_box(a_iv, c_chi) = chi;
+    Real psi_bl = get_psi_bl(loc, a_params);
+    Real psi = a_multigrid_vars_box(a_iv, c_psi_reg) + psi_bl;
+    a_grchombo_vars_box(a_iv, c_chi) = pow(psi, -4.0);
+
+    // \tilde{A}_{ij} = psi^{-4}A_{ij} = psi^{-6}\bar{A}_{ij}
+    Real Aij_psi_factor = pow(psi, -6.0);
+    a_grchombo_vars_box(a_iv, c_A11) =
+        a_multigrid_vars_box(a_iv, c_A11_0) * Aij_psi_factor;
+    a_grchombo_vars_box(a_iv, c_A12) =
+        a_multigrid_vars_box(a_iv, c_A12_0) * Aij_psi_factor;
+    a_grchombo_vars_box(a_iv, c_A13) =
+        a_multigrid_vars_box(a_iv, c_A13_0) * Aij_psi_factor;
+    a_grchombo_vars_box(a_iv, c_A22) =
+        a_multigrid_vars_box(a_iv, c_A22_0) * Aij_psi_factor;
+    a_grchombo_vars_box(a_iv, c_A23) =
+        a_multigrid_vars_box(a_iv, c_A23_0) * Aij_psi_factor;
+    a_grchombo_vars_box(a_iv, c_A33) =
+        a_multigrid_vars_box(a_iv, c_A33_0) * Aij_psi_factor;
 
     // Copy lapse
-    a_grchombo_vars_box(a_iv, c_lapse) = a_multigrid_vars_box(a_iv, c_lapse_0);
+    a_grchombo_vars_box(a_iv, c_lapse)
+        = pow(psi, a_params.pre_collapsed_lapse_exponent);
 
     // Copy phi and Pi
     a_grchombo_vars_box(a_iv, c_phi_Re)

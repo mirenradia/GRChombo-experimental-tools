@@ -63,6 +63,18 @@ void compute_boson_star_profile(BosonStar &a_boson_star,
                << chi_asymptotic << "\n" << std::endl;
     }
     */
+    if (a_params.rescale_radius)
+    {
+        Real psi_addition_constant
+            = - 0.5 * a_params.bh_bare_mass / a_params.binary_separation;
+        Real sqrt_rescale_factor = 1.0 / (1.0 - psi_addition_constant);
+        Real rescale_factor = sqrt_rescale_factor * sqrt_rescale_factor;
+        a_boson_star.m_1d_sol.rescale_isotropic_radius(rescale_factor);
+
+        pout() << "\nUsing rescaling method:\n"
+               << "psi addition constant = " << psi_addition_constant << "\n"
+               << "rescale factor = " << rescale_factor << endl;
+    }
 }
 
 // Sets up and runs the solver
