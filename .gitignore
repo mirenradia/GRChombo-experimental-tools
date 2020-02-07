@@ -8,3 +8,4 @@ pout.*
 *.pbs
 LB.txt
 .gcc-flags.json
+_params*.txt
