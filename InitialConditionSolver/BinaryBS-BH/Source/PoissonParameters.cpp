@@ -58,6 +58,9 @@ void getPoissonParameters(PoissonParameters &a_params)
     // Chombo refinement and load balancing criteria
     pp.load("refine_threshold", a_params.refineThresh);
 
+    // number of finer levels to refine around the black Hole
+    pp.load("num_bh_tagging_levels", a_params.num_bh_tagging_levels, 2);
+
     // alias the weird chombo names to something more descriptive
     // for these box params, and default to some reasonable values
     if (pp.contains("block_factor"))

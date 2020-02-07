@@ -38,6 +38,7 @@ class PoissonParameters
     int bufferSize;
     Real fillRatio;
     Real refineThresh;
+    int num_bh_tagging_levels;
     int coefficient_average_type;
     int verbosity;
     Vector<int> periodic;

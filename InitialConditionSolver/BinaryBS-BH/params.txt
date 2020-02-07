@@ -1,11 +1,6 @@
 # Params for variable coefficient multigrid solver, solving the eqn
 # aCoef(x)*I - beta*bCoef(x) * laplacian = rhs
 
-# The default setup allows for 2 BHs (Bowen York data) in the presence
-# of a scalar field configuration, with either periodic BCs (constant K
-# set by integrability conditions) or asymptotically flat (constant K=0,
-# dirichlet BCs should be set to dpsi=0)
-
 # AMR grid params - grid length and number of cells by direction
 L = 64.0
 N = 32 32 32
@@ -13,6 +8,8 @@ N = 32 32 32
 max_level    = 3
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.1
+# how many levels to refine around the centre of the black hole
+num_bh_tagging_levels = 2
 # Can guarantee refinement using extraction parameters below
 extraction_level = 0
 extraction_radius = 0.1
