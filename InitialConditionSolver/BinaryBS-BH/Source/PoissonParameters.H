@@ -17,10 +17,10 @@ using std::cerr;
 #include "AMRMultiGrid.H"
 #include "DisjointBoxLayout.H"
 #include "FArrayBox.H"
-#include "ParmParse.H"
-#include "VariableCoeffPoissonOperator.H"
-#include "SetBCs.H"
 #include "GRChomboBCs.hpp"
+#include "ParmParse.H"
+#include "SetBCs.H"
+#include "VariableCoeffPoissonOperator.H"
 
 // Boson Star includes
 #include "BosonStarParams.hpp"
@@ -35,7 +35,8 @@ class PoissonParameters
     IntVect nCells;
     int maxGridSize;
     int blockFactor;
-    int bufferSize;
+    int gridBufferSize;
+    int tagBufferSize;
     Real fillRatio;
     Real refineThresh;
     int num_bh_tagging_levels;
@@ -69,7 +70,7 @@ class PoissonParameters
     Real binary_separation;
     Potential::params_t potential_params;
     int extraction_level; // will ensure this level contains the extraction
-                         // radius and a 20% buffer zone
+                          // radius and a 20% buffer zone
     Real extraction_radius;
 };
 

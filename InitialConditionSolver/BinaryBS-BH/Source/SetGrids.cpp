@@ -27,9 +27,8 @@
 // Setup grids
 // Note that there is also an option to read in grids, but here we use tagging
 // for the refinement
-int set_grids(Vector<DisjointBoxLayout> &vectGrids,
-                     PoissonParameters &a_params,
-                     BosonStar &a_boson_star)
+int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params,
+              BosonStar &a_boson_star)
 {
     Vector<ProblemDomain> vectDomain;
     Vector<Real> vectDx;
@@ -62,11 +61,10 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
     int topLevel = 0;
     bool moreLevels = (maxLevel > 0);
 
-    int nesting_radius = 2;
     // create grid generation object
     BRMeshRefine meshrefine(vectDomain[0], a_params.refRatio,
                             a_params.fillRatio, a_params.blockFactor,
-                            nesting_radius, a_params.maxGridSize);
+                            a_params.gridBufferSize, a_params.maxGridSize);
 
     while (moreLevels)
     {
@@ -92,10 +90,9 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
                                                  3 * IntVect::Unit);
 
             GRChomboBCs grchombo_boundaries;
-            grchombo_boundaries.define(dxLevel[0],
-                                       a_params.grchombo_boundary_params,
-                                       a_params.coarsestDomain,
-                                       a_params.num_ghosts);
+            grchombo_boundaries.define(
+                dxLevel[0], a_params.grchombo_boundary_params,
+                a_params.coarsestDomain, a_params.num_ghosts);
 
             set_initial_conditions(*temp_multigrid_vars, *temp_dpsi,
                                    grchombo_boundaries, dxLevel, a_params,
@@ -119,7 +116,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
         }
 
         Vector<IntVectSet> tagVect(topLevel + 1);
-        int tags_grow = a_params.bufferSize;
+        int tags_grow = a_params.tagBufferSize;
         set_tag_cells(vectRHS, tagVect, vectDx, vectDomain, baseLevel,
                       topLevel + 1, a_params);
 
@@ -169,8 +166,8 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids,
     for (int ilev = 0; ilev < numlevels; ++ilev)
     {
         int nbox = vectGrids[ilev].dataIterator().size();
-        pout() << "Number of boxes on level " << ilev << " on this rank: "
-               << nbox << "\n";
+        pout() << "Number of boxes on level " << ilev
+               << " on this rank: " << nbox << "\n";
     }
     pout() << "----------------------------------------------\n" << std::endl;
     return 0;
@@ -220,11 +217,11 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
 
         // calculate the radius to definitely refine around the centre of the
         // black hole
-        Real radius_multiplication_factor = pow(2.0,
-            min(a_params.num_bh_tagging_levels - 1,
-                a_params.maxLevel - lev - 1));
-        Real refine_radius = 0.75 * a_params.bh_bare_mass
-                             * radius_multiplication_factor;
+        Real radius_multiplication_factor =
+            pow(2.0, min(a_params.num_bh_tagging_levels - 1,
+                         a_params.maxLevel - lev - 1));
+        Real refine_radius =
+            0.75 * a_params.bh_bare_mass * radius_multiplication_factor;
         // now loop through grids and tag cells where RHS > tagVal
         for (dit.reset(); dit.ok(); ++dit)
         {
@@ -252,7 +249,7 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
             }
         } // end loop over grids on this level
 
-        local_tags.grow(a_params.bufferSize);
+        local_tags.grow(a_params.tagBufferSize);
         const Box &domainBox = vectDomain[lev].domainBox();
         local_tags &= domainBox;
 

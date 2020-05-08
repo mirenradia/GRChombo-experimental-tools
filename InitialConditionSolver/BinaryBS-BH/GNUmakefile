@@ -30,6 +30,21 @@ src_dirs := Source \
 						$(GRCHOMBO_SOURCE)/utils \
 						$(GRCHOMBO_SOURCE)/InitialConditions/BosonStars/SingleStar
 
+.DEFAULT_GOAL := all-git
 
 # shared code for building example programs
 include $(CHOMBO_HOME)/mk/Make.example
+
+src_dirs_full := $(PWD) $(src_dirs)
+git_status_check := ""
+
+git_status_check += $(foreach src_dir,$(src_dirs_full),$(shell git diff --stat $(src_dir)/*.[c,h]pp))
+ifneq ($(strip $(git_status_check)),"")
+	git_status := "-dirty"
+endif
+git_status ?= ""
+
+git_commit_hash := $(shell git rev-parse --short HEAD)
+
+all-git: all
+	$(ECHO)mv $(_app_configs) $(ebase)$(config).$(git_commit_hash)$(git_status).ex

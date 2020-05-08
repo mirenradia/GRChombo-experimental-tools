@@ -8,7 +8,6 @@
  */
 #endif
 
-#include "GRParmParse.hpp"
 #include "PoissonParameters.H"
 #include "AMRIO.H"
 #include "BCFunc.H"
@@ -17,6 +16,7 @@
 #include "BoxIterator.H"
 #include "CONSTANTS.H"
 #include "CoarseAverage.H"
+#include "GRParmParse.hpp"
 #include "LoadBalance.H"
 #include "computeNorm.H"
 #include "parstream.H"
@@ -28,7 +28,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     GRParmParse pp;
 
     // Set verbosity
-    //a_params.verbosity = 3;
+    // a_params.verbosity = 3;
     pp.load("verbosity", a_params.verbosity);
 
     // Chombo grid params
@@ -80,7 +80,8 @@ void getPoissonParameters(PoissonParameters &a_params)
         pp.load("max_box_size", a_params.maxGridSize, 64);
     }
     pp.load("fill_ratio", a_params.fillRatio);
-    pp.load("buffer_size", a_params.bufferSize);
+    pp.load("grid_buffer_size", a_params.gridBufferSize);
+    pp.load("tag_buffer_size", a_params.tagBufferSize);
 
     // set average type -
     // set to a bogus default value, so we only break from solver
@@ -149,7 +150,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     // set defaults and override below
     Vector<int> vars_boundary_parity(NUM_MULTIGRID_VARS, GRChomboBCs::EVEN);
     pout() << "periodicity = " << is_periodic << endl;
-    for(int idir = 0; idir < SpaceDim; ++idir)
+    for (int idir = 0; idir < SpaceDim; ++idir)
     {
         a_params.grchombo_boundary_params.hi_boundary[idir] =
             grchombo_hi_boundary[idir];
@@ -157,7 +158,6 @@ void getPoissonParameters(PoissonParameters &a_params)
             grchombo_lo_boundary[idir];
         a_params.grchombo_boundary_params.is_periodic[idir] =
             a_params.periodic[idir];
-
     }
     a_params.nonperiodic_boundaries_exist = false;
     a_params.symmetric_boundaries_exist = false;
@@ -167,23 +167,20 @@ void getPoissonParameters(PoissonParameters &a_params)
         if (!a_params.periodic[idir])
         {
             a_params.nonperiodic_boundaries_exist = true;
-            if ((grchombo_hi_boundary[idir] ==
-                 GRChomboBCs::REFLECTIVE_BC) ||
-                (grchombo_lo_boundary[idir] ==
-                 GRChomboBCs::REFLECTIVE_BC))
+            if ((grchombo_hi_boundary[idir] == GRChomboBCs::REFLECTIVE_BC) ||
+                (grchombo_lo_boundary[idir] == GRChomboBCs::REFLECTIVE_BC))
             {
                 a_params.symmetric_boundaries_exist = true;
                 pp.getarr("vars_parity", vars_boundary_parity, 0,
                           NUM_MULTIGRID_VARS);
-
             }
         }
     }
 
     for (int ivar = 0; ivar < NUM_MULTIGRID_VARS; ++ivar)
     {
-        a_params.grchombo_boundary_params.vars_parity[ivar]
-            = vars_boundary_parity[ivar];
+        a_params.grchombo_boundary_params.vars_parity[ivar] =
+            vars_boundary_parity[ivar];
     }
 
     if (a_params.nonperiodic_boundaries_exist)
@@ -206,8 +203,8 @@ void getPoissonParameters(PoissonParameters &a_params)
                << ". This is not precollapsed" << endl;
     }
     // problem specific params
-    //pp.get("alpha", a_params.alpha);
-    //pp.get("beta", a_params.beta);
+    // pp.get("alpha", a_params.alpha);
+    // pp.get("beta", a_params.beta);
     // hardcode these to the expected values
     a_params.alpha = 1.0;
     a_params.beta = -1.0;
@@ -246,19 +243,16 @@ void getPoissonParameters(PoissonParameters &a_params)
     if (a_params.verbosity)
     {
         pout() << "\nBoson Star Profile Solver Parameters:\n"
-               << "abs_error = "
-                    << a_params.boson_star_params.abs_error << "\n"
-               << "rel_error = "
-                    << a_params.boson_star_params.rel_error << "\n"
+               << "abs_error = " << a_params.boson_star_params.abs_error << "\n"
+               << "rel_error = " << a_params.boson_star_params.rel_error << "\n"
                << "initial_step_size = "
-                    << a_params.boson_star_params.initial_step_size << "\n"
-               << "max_radius = "
-                    << a_params.boson_star_params.max_radius << "\n"
+               << a_params.boson_star_params.initial_step_size << "\n"
+               << "max_radius = " << a_params.boson_star_params.max_radius
+               << "\n"
                << "binary_search_tol = "
-                    << a_params.boson_star_params.binary_search_tol << "\n"
+               << a_params.boson_star_params.binary_search_tol << "\n"
                << "max_binary_search_iter = "
-                    << a_params.boson_star_params.max_binary_search_iter
-               << endl;
+               << a_params.boson_star_params.max_binary_search_iter << endl;
     }
 
     // Boson Star parameters
@@ -269,18 +263,18 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     pout() << "\nBoson Star parameters:\n"
            << "central_amplitude = "
-                << a_params.boson_star_params.central_amplitude_CSF << "\n"
+           << a_params.boson_star_params.central_amplitude_CSF << "\n"
            << "phase = " << a_params.boson_star_params.phase << "\n"
            << "centre = (" << a_params.boson_star_params.star_centre[0] << ", "
-                           << a_params.boson_star_params.star_centre[1] << ", "
-                           << a_params.boson_star_params.star_centre[2] << ")"
-           << endl;
+           << a_params.boson_star_params.star_centre[1] << ", "
+           << a_params.boson_star_params.star_centre[2] << ")" << endl;
 
     RealVect binary_displacement;
-    for(int idir = 0; idir < SpaceDim; idir++)
+    for (int idir = 0; idir < SpaceDim; idir++)
     {
-        binary_displacement[idir] = a_params.bh_offset[idir]
-            - a_params.boson_star_params.star_centre[idir];
+        binary_displacement[idir] =
+            a_params.bh_offset[idir] -
+            a_params.boson_star_params.star_centre[idir];
     }
     a_params.binary_separation = binary_displacement.vectorLength();
 
