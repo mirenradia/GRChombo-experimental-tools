@@ -40,6 +40,7 @@ class PoissonParameters
     Real fillRatio;
     Real refineThresh;
     int num_bh_tagging_levels;
+    bool forceGRChomboRegrid;
     int coefficient_average_type;
     int verbosity;
     Vector<int> periodic;

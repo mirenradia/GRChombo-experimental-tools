@@ -82,6 +82,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.load("fill_ratio", a_params.fillRatio);
     pp.load("grid_buffer_size", a_params.gridBufferSize);
     pp.load("tag_buffer_size", a_params.tagBufferSize);
+    pp.load("force_grchombo_regrid", a_params.forceGRChomboRegrid, true);
 
     // set average type -
     // set to a bogus default value, so we only break from solver
