@@ -61,6 +61,9 @@ void getPoissonParameters(PoissonParameters &a_params)
     // number of finer levels to refine around the black Hole
     pp.load("num_bh_tagging_levels", a_params.num_bh_tagging_levels, 2);
 
+    // buffer added onto horizon radius to refine around
+    pp.load("horizon_tagging_buffer", a_params.horizon_tagging_buffer, 0.5);
+
     // alias the weird chombo names to something more descriptive
     // for these box params, and default to some reasonable values
     if (pp.contains("block_factor"))

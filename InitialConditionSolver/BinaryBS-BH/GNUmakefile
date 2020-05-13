@@ -38,7 +38,7 @@ include $(CHOMBO_HOME)/mk/Make.example
 src_dirs_full := $(PWD) $(src_dirs)
 git_status_check := ""
 
-git_status_check += $(foreach src_dir,$(src_dirs_full),$(shell git diff --stat $(src_dir)/*.[c,h]pp))
+git_status_check += $(foreach src_dir,$(src_dirs_full),$(shell git diff --stat $(src_dir)/*.[c,h]pp 2> /dev/null))
 ifneq ($(strip $(git_status_check)),"")
 	git_status := "-dirty"
 endif

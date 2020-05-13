@@ -217,11 +217,12 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
 
         // calculate the radius to definitely refine around the centre of the
         // black hole
-        Real radius_multiplication_factor =
+        Real half_length_multiplication_factor =
             pow(2.0, min(a_params.num_bh_tagging_levels - 1,
                          a_params.maxLevel - lev - 1));
-        Real refine_radius =
-            0.75 * a_params.bh_bare_mass * radius_multiplication_factor;
+        Real refine_half_length =
+            0.5 * (1.0 + a_params.horizon_tagging_buffer) *
+            a_params.bh_bare_mass * half_length_multiplication_factor;
         // now loop through grids and tag cells where RHS > tagVal
         for (dit.reset(); dit.ok(); ++dit)
         {
@@ -241,9 +242,13 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
                     extra_tag |= (r < 1.2 * a_params.extraction_radius);
                 }
                 RealVect bh_displacement = loc - a_params.bh_offset;
-                Real r_bh = bh_displacement.vectorLength();
-                // bh event horizon at r = M/2 but add 50% buffer zone
-                extra_tag |= (r_bh < refine_radius);
+                // Real r_bh = bh_displacement.vectorLength();
+                // add a box of cells that includes the horizon at r_bh = M/2
+                for (int idir = 0; idir < CH_SPACEDIM; ++idir)
+                {
+                    extra_tag |=
+                        (abs(bh_displacement[idir]) < refine_half_length);
+                }
                 if (abs(thisRhs(iv)) >= tagVal || extra_tag)
                     local_tags |= iv;
             }
