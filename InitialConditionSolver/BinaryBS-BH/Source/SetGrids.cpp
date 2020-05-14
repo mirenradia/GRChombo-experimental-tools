@@ -244,11 +244,13 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
                 RealVect bh_displacement = loc - a_params.bh_offset;
                 // Real r_bh = bh_displacement.vectorLength();
                 // add a box of cells that includes the horizon at r_bh = M/2
+                bool in_horizon_box = true;
                 for (int idir = 0; idir < CH_SPACEDIM; ++idir)
                 {
-                    extra_tag |=
+                    in_horizon_box &=
                         (abs(bh_displacement[idir]) < refine_half_length);
                 }
+                extra_tag |= in_horizon_box;
                 if (abs(thisRhs(iv)) >= tagVal || extra_tag)
                     local_tags |= iv;
             }
