@@ -1,4 +1,4 @@
-# -*- Mode: Makefile -*- 
+# -*- Mode: Makefile -*-
 
 # the location of the Chombo "lib" directory
 ifndef CHOMBO_HOME
@@ -27,3 +27,4 @@ src_dirs := Source
 
 # shared code for building example programs
 include $(CHOMBO_HOME)/mk/Make.example
+include $(CHOMBO_HOME)/mk/Make.git
