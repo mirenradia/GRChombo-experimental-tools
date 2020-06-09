@@ -60,11 +60,10 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
     int topLevel = 0;
     bool moreLevels = (maxLevel > 0);
 
-    int nesting_radius = 2;
     // create grid generation object
     BRMeshRefine meshrefine(vectDomain[0], a_params.refRatio,
                             a_params.fillRatio, a_params.blockFactor,
-                            nesting_radius, a_params.maxGridSize);
+                            a_params.bufferSize, a_params.maxGridSize);
 
     while (moreLevels)
     {
@@ -90,10 +89,9 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
                                                  3 * IntVect::Unit);
 
             GRChomboBCs grchombo_boundaries;
-            grchombo_boundaries.define(dxLevel[0],
-                                       a_params.grchombo_boundary_params,
-                                       a_params.coarsestDomain,
-                                       a_params.num_ghosts);
+            grchombo_boundaries.define(
+                dxLevel[0], a_params.grchombo_boundary_params,
+                a_params.coarsestDomain, a_params.num_ghosts);
 
             set_initial_conditions(*temp_multigrid_vars, *temp_dpsi,
                                    grchombo_boundaries, dxLevel, a_params);
