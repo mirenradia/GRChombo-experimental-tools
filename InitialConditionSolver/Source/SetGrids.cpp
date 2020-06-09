@@ -83,10 +83,11 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
             LevelData<FArrayBox> *temp_multigrid_vars;
             LevelData<FArrayBox> *temp_dpsi;
 
-            temp_multigrid_vars = new LevelData<FArrayBox>(
-                vectGrids[level], NUM_MULTIGRID_VARS, 3 * IntVect::Unit);
-            temp_dpsi = new LevelData<FArrayBox>(vectGrids[level], 1,
-                                                 3 * IntVect::Unit);
+            temp_multigrid_vars =
+                new LevelData<FArrayBox>(vectGrids[level], NUM_MULTIGRID_VARS,
+                                         a_params.num_ghosts * IntVect::Unit);
+            temp_dpsi = new LevelData<FArrayBox>(
+                vectGrids[level], 1, a_params.num_ghosts * IntVect::Unit);
 
             GRChomboBCs grchombo_boundaries;
             grchombo_boundaries.define(
