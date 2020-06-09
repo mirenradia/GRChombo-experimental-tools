@@ -376,10 +376,13 @@ void set_non_const_output_cell(const FArrayBox &a_multigrid_vars_box,
     Real psi_bh = get_psi_brill_lindquist(loc, a_params);
     Real chi = pow(a_multigrid_vars_box(a_iv, c_psi_reg) + psi_bh, -4.0);
     a_grchombo_vars_box(a_iv, c_chi) = chi;
-    Real factor = pow(chi, 1.5);
+
+    // use pre-collapsed lapse
+    a_grchombo_vars_box(a_iv, c_lapse) = sqrt(chi);
 
     // Copy Aij across - note this is now \tilde Aij not \bar
     // Aij
+    Real factor = pow(chi, 1.5);
     a_grchombo_vars_box(a_iv, c_A11) =
         a_multigrid_vars_box(a_iv, c_A11_0) * factor;
     a_grchombo_vars_box(a_iv, c_A12) =
