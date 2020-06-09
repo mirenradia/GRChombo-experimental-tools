@@ -6,7 +6,7 @@
 #ifndef GRCHOMBOUSERVARIABLES_HPP
 #define GRCHOMBOUSERVARIABLES_HPP
 
-// assign an enum to each variable
+/// This enum gives the index of every variable stored in the grid
 enum
 {
     c_chi,
@@ -43,14 +43,17 @@ enum
     c_B2,
     c_B3,
 
-    c_phi, // matter field added
-    c_Pi,  //(minus) conjugate momentum
-
     c_Ham,
 
     c_Mom1,
     c_Mom2,
     c_Mom3,
+
+    c_Weyl4_Re,
+    c_Weyl4_Im,
+
+    c_Madm,
+    c_Jadm,
 
     NUM_GRCHOMBO_VARS
 };
@@ -60,25 +63,29 @@ namespace GRChomboUserVariables
 static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
     "chi",
 
-    "h11",    "h12",    "h13",    "h22", "h23", "h33",
+    "h11",      "h12",      "h13",    "h22", "h23", "h33",
 
     "K",
 
-    "A11",    "A12",    "A13",    "A22", "A23", "A33",
+    "A11",      "A12",      "A13",    "A22", "A23", "A33",
 
     "Theta",
 
-    "Gamma1", "Gamma2", "Gamma3",
+    "Gamma1",   "Gamma2",   "Gamma3",
 
     "lapse",
 
-    "shift1", "shift2", "shift3",
+    "shift1",   "shift2",   "shift3",
 
-    "B1",     "B2",     "B3",
+    "B1",       "B2",       "B3",
 
-    "phi",    "Pi",
+    "Ham",
 
-    "Ham",    "Mom1",   "Mom2",   "Mom3"};
+    "Mom1",     "Mom2",     "Mom3",
+
+    "Weyl4_Re", "Weyl4_Im",
+
+    "Madm",     "Jadm"};
 }
 
 #endif /* GRCHOMBOUSERVARIABLES_HPP */

@@ -17,9 +17,9 @@ using std::cerr;
 #include "AMRMultiGrid.H"
 #include "DisjointBoxLayout.H"
 #include "FArrayBox.H"
+#include "GRChomboBCs.hpp"
 #include "ParmParse.H"
 #include "VariableCoeffPoissonOperator.H"
-#include "GRChomboBCs.hpp"
 
 /// Class for solver input parameters
 /**
@@ -51,9 +51,6 @@ class PoissonParameters
     bool nonperiodic_boundaries_exist;
     Real alpha;
     Real beta;
-    Real G_Newton;
-    Real phi_amplitude;
-    Real phi_wavelength;
     Real bh1_bare_mass;
     Real bh2_bare_mass;
     Real bh1_spin;

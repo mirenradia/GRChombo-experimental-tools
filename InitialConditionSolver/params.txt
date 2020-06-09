@@ -1,10 +1,7 @@
 # Params for variable coefficient multigrid solver, solving the eqn
 # alpha*aCoef(x)*I - beta*bCoef(x) * laplacian = rhs
 
-# The default setup allows for 2 BHs (Bowen York data) in the presence
-# of a scalar field configuration, with either periodic BCs (constant K
-# set by integrability conditions) or asymptotically flat (constant K=0,
-# dirichlet BCs should be set to dpsi=0)
+# The default setup allows for 2 BHs (Bowen York data)
 
 # spatially-varying aCoef and bCoef are set in the example itself
 # see SetLevelData.cpp, we expect alpha = 1 and beta = -1
@@ -67,20 +64,9 @@ lo_boundary = 1 1 1
 # 4,5,6 = odd xy, yz, xz
 vars_parity = 0             #psi
               0 4 6 0 5 0   #Aij
-              0             #phi
-
-
-# Q: "Simple, change the gravitational constant of the Universe"
-G_Newton = 1.0
-
-# scalar field input params
-phi_amplitude = 0.1
-phi_wavelength = 1
 
 # initial conditions for Binary BH spacetimes
-# (can be with or without periodic BCs,
-#  and in presence of scalar field)
-# if you don't want BHs just set masses to zero
+# (can be with or without periodic BCs)
 
 #BH1
 bh1_bare_mass = 0.5

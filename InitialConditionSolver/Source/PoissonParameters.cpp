@@ -34,17 +34,6 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "alpha, beta = " << a_params.alpha << ", " << a_params.beta
            << endl;
 
-    // Initial conditions for the scalar field
-    pp.get("G_Newton", a_params.G_Newton);
-    pp.get("phi_amplitude", a_params.phi_amplitude);
-    pp.get("phi_wavelength", a_params.phi_wavelength);
-
-    if (abs(a_params.phi_amplitude) > 0.0)
-    {
-        pout() << "Spacetime contains scalar field of amplitude "
-               << a_params.phi_amplitude << endl;
-    }
-
     // Initial conditions for the black holes
     pp.get("bh1_bare_mass", a_params.bh1_bare_mass);
     pp.get("bh2_bare_mass", a_params.bh2_bare_mass);
@@ -152,7 +141,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     // set defaults and override below
     Vector<int> vars_boundary_parity(NUM_MULTIGRID_VARS, GRChomboBCs::EVEN);
     pout() << "periodicity = " << is_periodic << endl;
-    for(int idir = 0; idir < SpaceDim; ++idir)
+    for (int idir = 0; idir < SpaceDim; ++idir)
     {
         a_params.grchombo_boundary_params.hi_boundary[idir] =
             grchombo_hi_boundary[idir];
@@ -160,7 +149,6 @@ void getPoissonParameters(PoissonParameters &a_params)
             grchombo_lo_boundary[idir];
         a_params.grchombo_boundary_params.is_periodic[idir] =
             a_params.periodic[idir];
-
     }
     a_params.nonperiodic_boundaries_exist = false;
     a_params.symmetric_boundaries_exist = false;
@@ -170,23 +158,20 @@ void getPoissonParameters(PoissonParameters &a_params)
         if (!a_params.periodic[idir])
         {
             a_params.nonperiodic_boundaries_exist = true;
-            if ((grchombo_hi_boundary[idir] ==
-                 GRChomboBCs::REFLECTIVE_BC) ||
-                (grchombo_lo_boundary[idir] ==
-                 GRChomboBCs::REFLECTIVE_BC))
+            if ((grchombo_hi_boundary[idir] == GRChomboBCs::REFLECTIVE_BC) ||
+                (grchombo_lo_boundary[idir] == GRChomboBCs::REFLECTIVE_BC))
             {
                 a_params.symmetric_boundaries_exist = true;
                 pp.getarr("vars_parity", vars_boundary_parity, 0,
                           NUM_MULTIGRID_VARS);
-
             }
         }
     }
 
     for (int ivar = 0; ivar < NUM_MULTIGRID_VARS; ++ivar)
     {
-        a_params.grchombo_boundary_params.vars_parity[ivar]
-            = vars_boundary_parity[ivar];
+        a_params.grchombo_boundary_params.vars_parity[ivar] =
+            vars_boundary_parity[ivar];
     }
 
     if (a_params.nonperiodic_boundaries_exist)
@@ -196,6 +181,4 @@ void getPoissonParameters(PoissonParameters &a_params)
         GRChomboBCs::write_boundary_conditions(
             a_params.grchombo_boundary_params);
     }
-
-
 }

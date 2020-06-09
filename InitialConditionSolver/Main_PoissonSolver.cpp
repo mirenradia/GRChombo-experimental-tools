@@ -9,12 +9,12 @@
 #include "DebugDump.H"
 #include "FABView.H"
 #include "FArrayBox.H"
+#include "GRChomboBCs.hpp"
 #include "LevelData.H"
 #include "LoadBalance.H"
 #include "MultilevelLinearOp.H"
 #include "ParmParse.H"
 #include "PoissonParameters.H"
-#include "GRChomboBCs.hpp"
 #include "SetBCs.H"
 #include "SetGrids.H"
 #include "SetLevelData.H"
@@ -39,10 +39,9 @@ using std::cerr;
 
 // Sets up and runs the solver
 // The equation solved is: [aCoef*I + bCoef*Laplacian](dpsi) = rhs
-// We assume conformal flatness, K=const and Momentum constraint satisfied
+// We assume conformal flatness, K=0 and Momentum constraint satisfied
 // by chosen Aij (for now sourced by Bowen York data),
-// lapse = 1 shift = 0, phi is the scalar field and is used to
-// calculate the rhs, Pi = dphidt = 0.
+// lapse = 1 shift = 0
 int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                  const PoissonParameters &a_params)
 {
@@ -52,7 +51,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // create the necessary hierarchy of data components
     int nlevels = a_params.numLevels;
-    // the user set initial conditions - currently including psi, phi, A_ij
+    // the user set initial conditions - currently including psi, A_ij
     Vector<LevelData<FArrayBox> *> multigrid_vars(nlevels, NULL);
     // the correction to the conformal factor - what the solver solves for
     Vector<LevelData<FArrayBox> *> dpsi(nlevels, NULL);
@@ -94,12 +93,11 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         vectDx[ilev] = dxLev;
 
         GRChomboBCs grchombo_boundaries;
-        grchombo_boundaries.define(vectDx[ilev][0],
-                                   a_params.grchombo_boundary_params,
-                                   a_params.coarsestDomain,
-                                   a_params.num_ghosts);
+        grchombo_boundaries.define(
+            vectDx[ilev][0], a_params.grchombo_boundary_params,
+            a_params.coarsestDomain, a_params.num_ghosts);
         // set initial guess for psi and zero dpsi
-        // and values for other multigrid sources - phi and Aij
+        // and values for other multigrid sources: Aij
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                grchombo_boundaries, vectDx[ilev], a_params);
 
@@ -138,41 +136,20 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // Iterate linearised Poisson eqn for NL solution
     Real dpsi_norm = 0.0;
-    Real constant_K = 0.0;
     for (int NL_iter = 0; NL_iter < max_NL_iter; NL_iter++)
     {
 
         pout() << "Main Loop Iteration " << (NL_iter + 1) << " out of "
                << max_NL_iter << endl;
 
-        // Set integrability condition on K if periodic
-        if (a_params.periodic[0] == 1)
-        {
-            // Calculate values for integrand here with K unset
-            pout() << "Computing average K value... " << endl;
-            for (int ilev = 0; ilev < nlevels; ilev++)
-            {
-                set_constant_K_integrand(*integrand[ilev],
-                                         *multigrid_vars[ilev], vectDx[ilev],
-                                         a_params);
-            }
-            Real integral = computeSum(integrand, a_params.refRatio,
-                                       a_params.coarsestDx, Interval(0, 0));
-            Real volume = a_params.domainLength[0] * a_params.domainLength[1] *
-                          a_params.domainLength[2];
-            constant_K = -sqrt(abs(integral) / volume);
-            pout() << "Constant average K value set to " << constant_K << endl;
-        }
-
         // Calculate values for coefficients here - see SetLevelData.cpp
         // for details
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_a_coef(*aCoef[ilev], *multigrid_vars[ilev], a_params,
-                       vectDx[ilev], constant_K);
+                       vectDx[ilev]);
             set_b_coef(*bCoef[ilev], a_params, vectDx[ilev]);
-            set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params,
-                    constant_K);
+            set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params);
         }
 
         // set up solver factory
@@ -215,22 +192,21 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                 quadCFI.coarseFineInterp(*dpsi[ilev], *dpsi[ilev - 1]);
             }
 
-            // For intralevel ghosts - this is done in set_update_phi0
+            // For intralevel ghosts - this is done in set_update_psi0
             // but need the exchange copier object to do this
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
 
-            if(a_params.symmetric_boundaries_exist)
+            if (a_params.symmetric_boundaries_exist)
             {
                 GRChomboBCs grchombo_boundaries;
-                grchombo_boundaries.define(vectDx[ilev][0],
-                                           a_params.grchombo_boundary_params,
-                                           a_params.coarsestDomain,
-                                           a_params.num_ghosts);
-                grchombo_boundaries.enforce_symmetric_boundaries(
-                                        Side::Hi, *dpsi[ilev]);
-                grchombo_boundaries.enforce_symmetric_boundaries(
-                                        Side::Lo, *dpsi[ilev]);
+                grchombo_boundaries.define(
+                    vectDx[ilev][0], a_params.grchombo_boundary_params,
+                    a_params.coarsestDomain, a_params.num_ghosts);
+                grchombo_boundaries.enforce_symmetric_boundaries(Side::Hi,
+                                                                 *dpsi[ilev]);
+                grchombo_boundaries.enforce_symmetric_boundaries(Side::Lo,
+                                                                 *dpsi[ilev]);
             }
 
             // now the update
@@ -262,8 +238,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
-    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params,
-                      constant_K);
+    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params);
 
     // clean up data
     for (int level = 0; level < multigrid_vars.size(); level++)
