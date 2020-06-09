@@ -33,6 +33,7 @@ class PoissonParameters
     int bufferSize;
     Real fillRatio;
     Real refineThresh;
+    bool forceGRChomboRegrid;
     int coefficient_average_type;
     int verbosity;
     Vector<int> periodic;

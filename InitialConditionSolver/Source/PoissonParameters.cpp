@@ -85,6 +85,8 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("max_grid_size", a_params.maxGridSize);
     pp.get("fill_ratio", a_params.fillRatio);
     pp.get("buffer_size", a_params.bufferSize);
+    bool force_grchombo_regrid = false;
+    pp.query("force_grchombo_regrid", a_params.forceGRChomboRegrid);
 
     // set average type -
     // set to a bogus default value, so we only break from solver

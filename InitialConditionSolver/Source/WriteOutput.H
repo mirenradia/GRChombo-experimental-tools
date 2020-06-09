@@ -32,6 +32,7 @@
 #include "PoissonParameters.H"
 #include "SetLevelData.H"
 #include <iostream>
+#include <limits>
 
 #ifdef CH_Linux
 // Should be undefined by default
@@ -141,6 +142,11 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
     header.m_int["num_levels"] = a_params.maxLevel + 1;
     header.m_int["iteration"] = 0;
     header.m_real["time"] = 0.0;
+    int steps_since_regrid = 0;
+    if (a_params.forceGRChomboRegrid)
+    {
+        steps_since_regrid = std::numeric_limits<int>::max();
+    }
 
     for (int level = 0; level < a_multigrid_vars.size(); ++level)
     {
@@ -150,7 +156,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         char headername2[100];
         sprintf(headername2, "steps_since_regrid_%d", level);
-        header.m_int[headername2] = 0;
+        header.m_int[headername2] = steps_since_regrid;
     }
 
     header.m_int["num_components"] = NUM_GRCHOMBO_VARS;
@@ -170,15 +176,14 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
     {
         HDF5HeaderData level_header;
 
-        grchombo_vars[level] = new LevelData<FArrayBox>(
-            a_grids[level], NUM_GRCHOMBO_VARS,
-            a_params.num_ghosts * IntVect::Unit);
+        grchombo_vars[level] =
+            new LevelData<FArrayBox>(a_grids[level], NUM_GRCHOMBO_VARS,
+                                     a_params.num_ghosts * IntVect::Unit);
 
         GRChomboBCs grchombo_boundaries;
-        grchombo_boundaries.define(a_vectDx[level][0],
-                                   a_params.grchombo_boundary_params,
-                                   a_params.coarsestDomain,
-                                   a_params.num_ghosts);
+        grchombo_boundaries.define(
+            a_vectDx[level][0], a_params.grchombo_boundary_params,
+            a_params.coarsestDomain, a_params.num_ghosts);
 
         // Add in the values of the data in the correct form
         set_output_data(*grchombo_vars[level], *a_multigrid_vars[level],
