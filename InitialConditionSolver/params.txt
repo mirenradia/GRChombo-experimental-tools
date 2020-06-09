@@ -42,6 +42,7 @@ coefficient_average_type = harmonic
 # Boundary conditions for domain-boundary faces
 # 0 for non periodic, 1 for periodic (enforces same for all)
 is_periodic = 0
+num_ghosts = 4
 # if not periodic, then what?
 # 1 -> const Neumann (gradient), 0 -> const Dirichlet (value)
 bc_lo       = 0 0 0

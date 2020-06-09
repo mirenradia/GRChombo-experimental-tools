@@ -121,6 +121,7 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     // Hardcode num_ghosts to 3 as this is what GRChombo needs
     a_params.num_ghosts = 3;
+    pp.query("num_ghosts", a_params.num_ghosts);
 
     // Periodicity - for the moment enforce same in all directions
     ProblemDomain crseDom(crseDomBox);
