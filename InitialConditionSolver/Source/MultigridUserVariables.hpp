@@ -6,6 +6,9 @@
 #ifndef MULTIGRIDUSERVARIABLES_HPP
 #define MULTIGRIDUSERVARIABLES_HPP
 
+#include <array>
+#include <string>
+
 // assign an enum to each variable
 enum
 {
@@ -25,7 +28,7 @@ enum
 
 namespace MultigridUserVariables
 {
-static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
+static std::array<std::string, NUM_MULTIGRID_VARS> variable_names = {
     "psi",
 
     "A11_0", "A12_0", "A13_0", "A22_0", "A23_0", "A33_0"};
