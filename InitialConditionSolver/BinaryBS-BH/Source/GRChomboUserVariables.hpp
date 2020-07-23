@@ -6,6 +6,9 @@
 #ifndef GRCHOMBOUSERVARIABLES_HPP
 #define GRCHOMBOUSERVARIABLES_HPP
 
+#include <array>
+#include <string>
+
 // assign an enum to each variable
 enum
 {
@@ -45,37 +48,22 @@ enum
 
     c_phi_Re, // real part of scalar field
     c_phi_Im, // imaginary part of scalar field
-    c_Pi_Re, // real part of auxiliary variable Pi = -L_n phi
-    c_Pi_Im, // imaginary part of auxiliary variable Pi = -L_n phi
-
-    c_mod_phi, // modulus of the scalar field
-
-    c_Madm,
-
-    c_N, // Noether Charge integrand
-
-    c_Ham,
-
-    c_Mom1,
-    c_Mom2,
-    c_Mom3,
-
-    c_Weyl4_Re,
-    c_Weyl4_Im,
+    c_Pi_Re,  // real part of auxiliary variable Pi = -L_n phi
+    c_Pi_Im,  // imaginary part of auxiliary variable Pi = -L_n phi
 
     NUM_GRCHOMBO_VARS
 };
 
 namespace GRChomboUserVariables
 {
-static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
+static const std::array<std::string, NUM_GRCHOMBO_VARS> variable_names = {
     "chi",
 
-    "h11",    "h12",    "h13",    "h22", "h23", "h33",
+    "h11",    "h12",    "h13",    "h22",  "h23", "h33",
 
     "K",
 
-    "A11",    "A12",    "A13",    "A22", "A23", "A33",
+    "A11",    "A12",    "A13",    "A22",  "A23", "A33",
 
     "Theta",
 
@@ -87,17 +75,7 @@ static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
 
     "B1",     "B2",     "B3",
 
-    "phi_Re",   "phi_Im",   "Pi_Re",    "Pi_Im",
-
-    "mod_phi",
-
-    "Madm",
-
-    "N",
-
-    "Ham",    "Mom1",   "Mom2",   "Mom3",
-
-    "Weyl4_Re",  "Weyl4_Im"};
+    "phi_Re", "phi_Im", "Pi_Re",  "Pi_Im"};
 }
 
 #endif /* GRCHOMBOUSERVARIABLES_HPP */
